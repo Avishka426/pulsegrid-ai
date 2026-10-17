@@ -10,6 +10,7 @@ import from .seed { network_assets }
 import from .scenarios { find_scenario, fault_node, mark_fault, apply_scenario, reset_assets }
 import from .views { snapshot, scenario_infos, preview }
 import from .incidents { stored_incidents, active_incident, open_incident, resolve_active_incident, evidence_of, incident_detail }
+import from .recovery { build_recovery_plan }
 
 # Snapshot of the network plus the active incident, if any.
 def _current_snapshot(assets: list[Infrastructure]) -> GraphSnapshot {
@@ -63,4 +64,16 @@ def:pub preview_scenario(scenario_id: str) -> ScenarioPreview {
 # One recorded incident with its evidence, or None if it is not stored.
 def:pub get_incident(identifier: str) -> IncidentDetail | None {
     return incident_detail(identifier);
+}
+
+# Verified recovery options for the active fault, with a recommendation.
+# Options are simulated and advisory; nothing is switched. An empty plan
+# (no options) when no fault is active.
+def:pub recovery_plan() -> RecoveryPlan {
+    assets = network_assets();
+    fault = fault_node(assets);
+    incident = active_incident();
+    if fault is None or incident is None { return RecoveryPlan(fault_id=""); }
+    mark_fault(assets, fault);
+    return build_recovery_plan(assets, incident);
 }
