@@ -9,6 +9,7 @@ import from ..IncidentTimeline { IncidentTimeline }
 import from ..SimulationControls { SimulationControls }
 import from ..AgentActivityPanel { AgentActivityPanel }
 import from ..RecoveryPanel { RecoveryPanel }
+sv import from ...agents.endpoints { AgentStatus, agent_status, list_agent_runs }
 
 def:pub OverviewPage() -> JsxElement {
     has snapshot: GraphSnapshot = {"nodes": [], "links": [], "fault_active": False, "fault_label": "", "fault_id": "", "scenario_id": "", "scenario_title": "", "downstream": [], "interrupted_load_mw": 0.0, "critical_interrupted": 0} as GraphSnapshot;
@@ -16,6 +17,9 @@ def:pub OverviewPage() -> JsxElement {
     has loading: bool = True;
     has error_message: str = "";
     has selected_id: str = "";
+    has agents: AgentStatus | None = None;
+    has agent_runs: int = 0;
+    has agents_failed: bool = False;
 
     async can with entry {
         try {
@@ -24,6 +28,12 @@ def:pub OverviewPage() -> JsxElement {
             loading = False;
         }
         except Exception { error_message = "Could not load the synthetic network."; loading = False; }
+        try {
+            agents = await agent_status();
+            runs = await list_agent_runs();
+            agent_runs = len(runs);
+        }
+        except Exception { agents_failed = True; }
     }
 
     def handle_scenario(e: ChangeEvent) { scenario_id = e.target.value; }
@@ -81,7 +91,7 @@ def:pub OverviewPage() -> JsxElement {
                     <SimulationControls scenario_id={scenario_id} loading={loading} onScenarioChange={handle_scenario} onFault={handle_fault} onReset={handle_reset} />
                 </div>
             </div>
-            <AgentActivityPanel />
+            <AgentActivityPanel status={agents} run_count={agent_runs} failed={agents_failed} />
         </div>
         <footer className="border-t border-border pt-4 text-[11px] leading-relaxed text-muted-foreground">Synthetic educational simulator, not an operational grid-control system. No real infrastructure is connected. No claims about actual Sri Lankan grid topology.</footer>
     </Sidebar>;
