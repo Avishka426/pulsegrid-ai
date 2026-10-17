@@ -1,7 +1,7 @@
 [project]
-name = "empty"
-version = "0.0.1"
-description = "Empty Jac project - start from scratch"
+name = "pulsegrid-ai"
+version = "0.1.0"
+description = "Agentic Power Grid Incident Intelligence & Recovery Simulator"
 entry-point = "main.jac"
 kind = "web-app"
 
@@ -13,15 +13,15 @@ api_key = "${OPENAI_API_KEY:-}"
 
 [jac-shadcn]
 style = "nova"
-baseColor = "neutral"
-theme = "amber"
-font = "inter"
-radius = "default"
+baseColor = "zinc"
+theme = "teal"
+font = "geist"
+radius = "medium"
 menuAccent = "subtle"
 menuColor = "default"
-
 [dependencies]
 [dependencies.npm]
+"@fontsource-variable/geist" = "*"
 react = "^18.2.0"
 react-dom = "^18.2.0"
 react-router-dom = "^6.22.0"
@@ -73,15 +73,15 @@ plugins = ["tailwindcss()"]
 lib_imports = ["import tailwindcss from '@tailwindcss/vite'"]
 
 [client.app_meta_data]
-title = "A blank canvas"
-description = "A minimal jac-shadcn starter with the theme wired up and nothing in the way."
-keywords = "jac, starter, shadcn, template"
-author = "Blank canvas"
-theme_color = "#dc7702"
+title = "PulseGrid AI"
+description = "Synthetic grid incident intelligence and recovery simulator."
+keywords = "jac, power grid, incident simulator, AI"
+author = "Jaseci Labs Hackathon"
+theme_color = "#14b8a6"
 og_type = "website"
-og_title = "A blank canvas"
-og_description = "A minimal jac-shadcn starter."
-og_site_name = "Blank canvas"
+og_title = "PulseGrid AI"
+og_description = "Monitor. Investigate. Recover."
+og_site_name = "PulseGrid AI"
 
 
 [scale]

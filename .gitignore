@@ -1,2 +1,19 @@
+# Jac runtime state and generated output
 .jac/
+.jac-server.log
+__jac_gen__/
+dist/
+build/
+
+# Dependencies and local environment
 node_modules/
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+
+# Python and operating system caches
+__pycache__/
+*.py[cod]
+.DS_Store

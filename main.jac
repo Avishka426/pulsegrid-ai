@@ -1,5 +1,10 @@
 import from .frontend { app as ClientApp }
 
+import from services.graphService { read_graph, apply_fault, reset_graph }
+import from .components.PulseGridDashboard { PulseGridDashboard }
+import ".styles.global.css";
+import from "@jac/runtime" { Router, Routes, Route }
+
 def:pub app() -> JsxElement {
-    return <ClientApp />;
+    return <Router><Routes><Route path="/" element={<PulseGridDashboard />} /></Routes></Router>;
 }
