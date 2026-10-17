@@ -6,7 +6,7 @@ PulseGrid AI is a Jac full-stack, synthetic educational distribution-grid simula
 
 ## Current phase
 
-- Jac 0.34.23 web-app; Jac owns the graph model, server operations and browser UI.
+- Jac 0.37.x web-app; Jac owns the graph model, server operations and browser UI.
 - A deterministic 14-asset, 14-link example network is initialized on first graph read.
 - The dashboard reads graph state through Jac server functions and can apply a reproducible demo fault or reset the network.
 - The three scenarios fault one explicit asset each: Transformer Overheating → `TR-01`, Substation Failure → `SUB-01`, Distribution Line Overload → `J-01` (modelled as a fault at the West Junction distribution node).
@@ -18,20 +18,20 @@ All data is synthetic. There are no real infrastructure connections or automatic
 
 ## Requirements
 
-Install the Jac toolchain matching Jac 0.34.23 and Bun (used by Jac's client dependency installer). No API keys or paid services are needed for Phase 1.
+Install the Jac CLI, version 0.37.x (verified with 0.37.25). No API keys or paid services are needed for Phase 1.
 
 ## Run locally
 
 ```sh
 jac install
-jac start --dev main.jac
+jac run --dev
 ```
 
-Open the app URL printed by the CLI (normally http://localhost:8000). Graph persistence is local to the Jac runtime by default; `.jac/` is generated runtime data and should not be committed. To check source and run the graph tests:
+Open the app URL printed by the CLI (normally http://localhost:8000; use `--port` to change it). `jac run --show` prints what will be served without starting it. Graph persistence is local to the Jac runtime by default; `.jac/` is generated runtime data and should not be committed. To check source and run the graph tests:
 
 ```sh
 jac check main.jac
-jac test services/graphService.jac
+jac test
 ```
 
 Tests live in `services/graphService.test.jac` (an annex of the service module). They build their own transient copy of the synthetic network and never touch `root`, so they do not read or modify the dashboard's persisted graph. They cover traversal order and hop counts, shared-feeder de-duplication, alternate-feed detection, each scenario's target and resulting statuses, scenario replacement, unknown-scenario rejection and reset.
@@ -55,7 +55,7 @@ Tests live in `services/graphService.test.jac` (an annex of the service module).
 
 ## Portability and configuration
 
-The project uses standard Jac web-app tooling and project-local source. Do not commit credentials, generated dependencies or `.jac/` runtime state. `.env.example` lists optional future LLM configuration; Phase 1 does not read or require those values. JacHammer-specific project identifiers in `jac.toml` are hosting metadata and are not required for local execution.
+The project uses standard Jac web-app tooling and project-local source. Do not commit credentials, generated dependencies or `.jac/` runtime state. `.env.example` lists optional future LLM configuration; Phase 1 does not read or require those values. JacHammer-specific project identifiers in `jac.toml` (`[jachammer]`, `[jacpack]`) are hosting metadata and are not required for local execution. The project moved from Jac 0.34.23 to 0.37.x so it can be installed and run from a fresh clone; a JacHammer workspace still on 0.34.23 may not run it (0.37 changed `jac.toml` keys and removed `sv import`).
 
 ## Hackathon implementation boundary
 

@@ -2,7 +2,7 @@
 name = "pulsegrid-ai"
 version = "0.1.0"
 description = "Agentic Power Grid Incident Intelligence & Recovery Simulator"
-entry-point = "main.jac"
+entry-point = "main"
 kind = "web-app"
 
 [byllm]
@@ -61,7 +61,7 @@ tailwindcss = "4.3.3"
 
 
 
-[dev-dependencies]
+[dev-dependencies.pypi]
 watchdog = ">=3.0.0"
 
 [serve]
@@ -83,10 +83,6 @@ og_title = "PulseGrid AI"
 og_description = "Monitor. Investigate. Recover."
 og_site_name = "PulseGrid AI"
 
-
-[scale]
-[scale.microservices]
-enabled = false
 
 [jacpack]
 name = 'pulsegrid-ai'
