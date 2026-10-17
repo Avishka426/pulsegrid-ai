@@ -69,6 +69,8 @@ watchdog = ">=3.0.0"
 # Without this, modules with no node/edge/walker of their own get pulled
 # into the browser bundle.
 "services.*" = "server"
+# Agents call byLLM and the graph; they must never be bundled for the browser.
+"agents.*" = "server"
 
 [test]
 # Collect tests project-wide (services/tests, and future agents/ tests).

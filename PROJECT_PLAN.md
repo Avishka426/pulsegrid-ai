@@ -26,6 +26,8 @@
 
 ## Phase 4 — Real agent collaboration
 
+- In progress (Member 2, `agents/`): five agents with deterministic tools, evidence-cited byLLM output on services incidents/evidence, a bounded verify/re-plan loop, run persistence, a not-configured mode, and MockLLM tests. `plan_recovery`/`check_option` in `agents/tools.jac` provisionally implement the services recovery contract until the services planner lands.
+
 - Add Jac walkers for Monitoring, Impact Investigation, Recovery Planning, Verification and Coordination.
 - Use structured byLLM outputs only where language reasoning is useful; keep graph mathematics deterministic.
 - Require user-configured provider credentials, evidence-linked decisions, iteration limits and replanning records. Never fabricate runs or tool calls.
