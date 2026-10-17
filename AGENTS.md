@@ -8,6 +8,9 @@
 - On Jac 0.34, attach nodes to `root` before linking them. Links made between transient nodes that are attached afterwards are stored but cannot be traversed (see `services/seed.jac` and `open_incident` in `services/incidents.jac`). Linking a transient node to an already attached one is fine.
 - Tests go in standalone `*_tests.jac` modules under a `tests/` folder (not `test_*.jac`, and not `.test.jac` annexes when they import sibling modules, which causes circular imports). HTTP endpoint tests use `JacTestClient` (`jaclang.runtimelib.testing`) from a pytest `test_*.py` file with a temporary `base_path` per test. `MockLLM` takes `model_name="mockllm", config={"outputs": [...]}`.
 - Use `jac install --shadcn` to add primitives; never hand-edit managed files under `components/ui/`.
+- Do not pass `className` to `components/ui` primitives: they spread every prop after their own merged `className`, so a passed class replaces their layout classes. Wrap the primitive in your own element instead. Components in `components/` import primitives as `".ui.<name>"` (one dot).
+- The dark theme is applied as the `dark` class on `<html>` (see `components/Sidebar.cl.jac`). A `dark` class on an inner element leaves text that inherits `<body>`'s light-theme colour unreadable.
+- Jac 0.34 client code: do not nest `await` inside another expression (`len(await f())` compiles to `await f().length`). Assign the awaited value first.
 - Keep all network data synthetic and deterministic. Do not claim agent activity or introduce physical-control actions before implementation and review.
 - Never commit credentials, `.env`, runtime graph state, dependency folders, or generated build output. `.env.example` may contain blank placeholders only.
 - Local development: `jac install`, then `jac start --dev main.jac`. Tests: `jac test`. Use `jac guide <topic>` for 0.34 syntax.
