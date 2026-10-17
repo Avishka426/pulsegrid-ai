@@ -14,7 +14,9 @@
 - Done: tested deterministic downstream reachability from the faulted node (`DownstreamTrace` walker), with hop counts, alternate-feed detection and interrupted end-use load.
 - Done: explicit, stable scenario targets (`TR-01`, `SUB-01`, `J-01`).
 - Done: dashboard shows affected assets and link outages from graph data with criticality context.
-- Remaining: represent scenarios and incident evidence as typed graph entities; endpoint-level tests; capacity checks on alternate feeds.
+- Done: incidents and evidence as typed graph entities (`Incident`, `Evidence`, `HasEvidence`) with lifecycle and history; endpoint-level tests.
+- Done: typed recovery-planning contracts (`RecoveryAction`, `ConstraintCheck`, `RecoveryOption`, `RecoveryPlan`), not yet produced.
+- Remaining: capacity checks on alternate feeds; tool-friendly query functions for agents.
 
 ## Phase 3 — Constrained recovery planning
 
