@@ -53,31 +53,7 @@ Tests live in `services/tests/` (`*_tests.jac`, with shared helpers in `fixtures
 - `styles/global.css` — Tailwind v4 and themed shadcn design tokens.
 - `PROJECT_PLAN.md` — delivered phase and next phase boundaries.
 
-## Agents
-
-`agents/` adds five agents that investigate a simulated fault. Graph tools compute every number; the model only writes prose and chooses among options that code generated.
-
-1. **Monitoring Agent** (`MonitoringScan` walker): finds the faulted asset, de-energized assets and assets at or above 80% load.
-2. **Impact Investigator** (`DownstreamWalk` walker): cites the incident's `Evidence` records, cross-checks them against the trace tool and its own walk, and has the model narrate the impact.
-3. **Recovery Planner**: gets deterministic options from `plan_recovery` and has the model choose one.
-4. **Verification Agent**: re-runs `check_option` independently and records the checks on the option. A failure goes back to the planner.
-5. **Coordinator Agent**: applies the scenario, opens the `Incident`, sequences the agents, caps re-planning at 3 iterations, and has the model write the final recommendation.
-
-Model output is rejected if it cites evidence IDs that don't exist or states numbers no tool produced.
-
-**Configuration.** Set `LLM_MODEL` (default `gpt-4o-mini`) and the matching key (`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`) in your environment; see `.env.example`. Run `jac install` so byLLM's dependencies are in `.jac/venv`. Without a key, `agent_status()` reports `configured: false` and `run_investigation` returns `not_configured` with no steps. Nothing is faked, stored, or applied to the graph.
-
-**Endpoints:** `agent_status`, `run_investigation(scenario_id)`, `list_agent_runs`, `get_agent_run(run_id)`. Completed and failed runs are stored on the graph as `AgentRunRecord` nodes with their steps, linked by `incident_id` to the incident they opened.
-
-**Tests:** `agents/tests/*_tests.jac` (run with `jac test`) use MockLLM, so no key is needed.
-
-`plan_recovery` and `check_option` in `agents/tools.jac` are provisional implementations of the `services/models.jac` recovery contract until the services planner lands. Design and status: `agents/DESIGN.md`.
-
 ## Known limitations
-
-- macOS 26: if `jac install` fails with `ensurepip is not available` (the bundled Python's `pyexpat` cannot find `_XML_SetAllocTrackerActivationThreshold` in the system libexpat), run `brew install expat`, then `DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib jac install` once.
-
-- Agents: with a real model, the choice and wording vary between runs (the numbers do not). The number check is lexical: it catches invented figures, not flawed reasoning about real ones. Runs are synchronous (several model calls). Runs from anonymous users share one guest graph.
 
 - Impact is topology-only reachability over directed links. There is no load-flow, voltage, protection or capacity modelling; "alternate feed" means a source path exists in the graph, not that it can carry the load.
 - Only one fault is active at a time; applying a scenario first resets the network.
