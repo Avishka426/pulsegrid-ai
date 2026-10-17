@@ -5,6 +5,9 @@
 # agents' own: their evidence log, the model-facing outputs, and the published
 # AgentRun contract for the UI.
 
+# Action kinds are defined with the recovery contract in services/models.jac.
+import from services.models { ACTION_BACKFEED, ACTION_ISOLATE }
+
 # A fact an agent recorded during a run, citable by id (AE-01, AE-02, ...).
 # `ref_id` links to a services Evidence record (e.g. INC-0003/EV-02) when the
 # fact came from the incident's evidence.
@@ -144,5 +147,3 @@ glob RUN_NOT_CONFIGURED: str = "not_configured";
 glob MODE_LLM: str = "llm";
 glob MODE_NOT_CONFIGURED: str = "not_configured";
 
-glob ACTION_BACKFEED: str = "backfeed";
-glob ACTION_ISOLATE: str = "isolate";

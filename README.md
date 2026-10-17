@@ -12,7 +12,7 @@ PulseGrid AI is a Jac full-stack, synthetic educational distribution-grid simula
 - The three scenarios fault one explicit asset each: Transformer Overheating → `TR-01`, Substation Failure → `SUB-01`, Distribution Line Overload → `J-01` (modelled as a fault at the West Junction distribution node).
 - Fault simulation computes downstream impact with a `DownstreamTrace` walker: a deterministic breadth-first traversal of outgoing `PowerLink` edges from the faulted node, recording each reachable asset once with its hop count. The same walker, run from the power source with the faulted node blocked, identifies downstream assets that still have an alternate supply path in the graph (for example Water Works, which is also fed from Harbor Junction).
 - Each simulated fault records an `Incident` node (`INC-0001`, `INC-0002`, … from a per-graph counter, not the clock) linked by `HasEvidence` edges to `Evidence` nodes: one for the faulted asset and one per downstream asset, in breadth-first order, with stable IDs such as `INC-0001/EV-03`. A new fault marks the previous incident `superseded`, reset marks it `resolved`, and the newest 20 incidents are kept. `GraphSnapshot` carries the active `incident_id` and its `evidence`; `list_incidents` returns the history, newest first.
-- Typed recovery-planning contracts (`RecoveryAction`, `ConstraintCheck`, `RecoveryOption`, `RecoveryPlan`) are defined in `services/models.jac` for upcoming work. Nothing produces them yet, and no recovery plan is generated or shown.
+- **Recovery planning** (`services/recovery.jac`): for the active fault, deterministic candidate options (back-feed every interrupted end-use load around the fault, back-feed priority facilities only, or keep the fault isolated) are each verified against path availability, link headroom, asset capacity and donor/supply headroom. An option is feasible only if every check passes; rejected options show the failing check (for example `L-10 headroom: 45 MW needed, 24 MW available`). The feasible option restoring the most priority facilities, then the most load, is recommended, falling back to isolation. Shown on Overview and in Reports. On the seed network every back-feed option fails a capacity check, so isolation is recommended for all three scenarios. Simulated and advisory; nothing is switched.
 - The dashboard draws the network from graph data, colouring each asset and link as normal, fault, de-energized or alternate feed, shaping each node by category (diamond/square/triangle/hexagon/pentagon/octagon/heptagon/circle), and lists downstream assets with hops, status, load and interrupted end-use load.
 - Clicking or keyboard-selecting (Enter/Space) a node in the diagram, the asset register or the downstream-impact table shows its details — category, capacity, load, criticality, status, connected links and downstream hops when faulted — in the Asset Details panel.
 - The dashboard is split into reusable Jac components (`Sidebar`, `Header`, `MetricCards`, `NetworkDiagram`, `AssetDetails`, `DownstreamImpactPanel`, `IncidentTimeline`, `SimulationControls`, `AgentActivityPanel`, `RecoveryPanel`) composed by page-level shells under `components/pages/`, with sidebar navigation to real routes.
@@ -56,8 +56,9 @@ Tests live in `services/tests/` (`*_tests.jac`, with shared helpers in `fixtures
 - `services/walkers.jac` — `DownstreamTrace` walker and downstream/alternate-feed analysis.
 - `services/scenarios.jac` — scenario definitions and fault/reset state transitions.
 - `services/incidents.jac` — incident records, evidence and history.
+- `services/recovery.jac` — recovery options, constraint checks, verification and recommendation.
 - `services/views.jac` — link views and the `GraphSnapshot` returned to clients.
-- `services/graphService.jac` — server endpoints (`read_graph`, `apply_fault`, `reset_graph`, `list_incidents`, `get_incident`, `list_scenarios`, `preview_scenario`); re-exports the types clients import.
+- `services/graphService.jac` — server endpoints (`read_graph`, `apply_fault`, `reset_graph`, `list_incidents`, `get_incident`, `list_scenarios`, `preview_scenario`, `recovery_plan`); re-exports the types clients import.
 - `services/tests/` — traversal, scenario, view, reset, incident and endpoint tests.
 - `components/pages/OverviewPage.cl.jac` — the stateful dashboard page; owns graph state, scenario selection and node selection, and composes the section components below.
 - `components/pages/NetworkExplorerPage.cl.jac`, `IncidentCenterPage.cl.jac`, `AgentIntelligencePage.cl.jac`, `SimulationLabPage.cl.jac`, `ReportsPage.cl.jac` — the other sidebar pages.
@@ -86,9 +87,12 @@ Model output is rejected if it cites evidence IDs that don't exist or states num
 
 **Tests:** `agents/tests/*_tests.jac` (run with `jac test`) use MockLLM, so no key is needed.
 
-`plan_recovery` and `check_option` in `agents/tools.jac` are provisional implementations of the `services/models.jac` recovery contract until the services planner lands. Design and status: `agents/DESIGN.md`.
+The agents' `plan_recovery` and `check_option` tools come from `services/recovery.jac` (re-exported by `agents/tools.jac`), the same verified planner the dashboard shows. Design and status: `agents/DESIGN.md`.
 
 ## Known limitations
+
+- Recovery options are evaluated and recommended but not applied to the simulation: there is no "apply recovery" step, so restored assets are never shown as re-energized.
+- The page title and icon come from `[client.app_meta_data]` and appear with `jac start main.jac`; `jac start --dev` serves Jac's built-in development page ("Jac App (Dev)", no icon).
 
 - macOS 26: if `jac install` fails with `ensurepip is not available` (the bundled Python's `pyexpat` cannot find `_XML_SetAllocTrackerActivationThreshold` in the system libexpat), run `brew install expat`, then `DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib jac install` once.
 
@@ -122,7 +126,7 @@ jac start --dev main.jac
 ## Demo script (about 4 minutes)
 
 1. **Simulation Lab** — compare the three scenarios side by side (downstream assets, de-energized vs. alternate feed, load lost). Point out that previews run on a copy of the network, then click **Apply to network** on Substation Failure.
-2. **Overview** — the diagram recolors `SUB-01` and its downstream links; show the hop-counted Downstream impact table and that Water Works stays fed from Harbor Junction.
+2. **Overview** — the diagram recolors `SUB-01` and its downstream links; show the hop-counted Downstream impact table and that Water Works stays fed from Harbor Junction. In **Recovery plan**, expand an option's constraint checks to show why back-feeding is rejected and isolation recommended.
 3. **Node selection** — click `TR-01` (or Tab to it and press Enter) to see its details; click a downstream row to inspect that asset.
 4. **Incident Center** — the new incident is active, with its evidence records (fault, de-energized and alternate-feed assets, hops, MW). Earlier incidents show as superseded or resolved.
 5. **Network Explorer** — search `TR`, filter by status "De-energized", and read the asset and link tables.

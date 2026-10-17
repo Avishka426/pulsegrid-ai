@@ -100,3 +100,17 @@ def test_get_incident_returns_evidence_for_current_and_past_incidents(client):
     current = call(client, "get_incident", {"identifier": "INC-0002"})
     assert (current["incident"]["status"], len(current["evidence"])) == ("active", 4)
     assert call(client, "get_incident", {"identifier": "INC-9999"}) is None
+
+
+def test_recovery_plan_is_empty_without_a_fault_and_verified_with_one(client):
+    empty = call(client, "recovery_plan", {})
+    assert (empty["fault_id"], empty["options"], empty["recommended_id"]) == ("", [], "")
+    call(client, "apply_fault", {"scenario_id": "transformer"})
+    plan = call(client, "recovery_plan", {})
+    assert plan["fault_id"] == "TR-01"
+    assert [o["identifier"] for o in plan["options"]] == ["OPT-1", "OPT-2", "OPT-3"]
+    assert all(len(o["checks"]) > 0 for o in plan["options"])
+    assert plan["recommended_id"] == "OPT-3"
+    assert [o["feasible"] for o in plan["options"]] == [False, False, True]
+    call(client, "reset_graph", {})
+    assert call(client, "recovery_plan", {})["options"] == []

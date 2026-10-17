@@ -1,4 +1,4 @@
-import from services.graphService { read_graph, apply_fault, reset_graph, list_incidents, list_scenarios, preview_scenario, get_incident }
+import from services.graphService { read_graph, apply_fault, reset_graph, list_incidents, list_scenarios, preview_scenario, get_incident, recovery_plan }
 import from agents.endpoints { agent_status, run_investigation, list_agent_runs, get_agent_run }
 
 cl {

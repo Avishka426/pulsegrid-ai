@@ -17,9 +17,12 @@
 - Done: incidents and evidence as typed graph entities (`Incident`, `Evidence`, `HasEvidence`) with lifecycle and history; endpoint-level tests.
 - Done: typed recovery-planning contracts (`RecoveryAction`, `ConstraintCheck`, `RecoveryOption`, `RecoveryPlan`), not yet produced.
 - Done: tool-friendly query endpoints (`list_scenarios`, `preview_scenario`, `get_incident`) and dashboard pages for every sidebar item.
-- Remaining: capacity checks on alternate feeds; a deterministic recovery planner in `services/` (the Recovery panel still shows "upcoming").
+- Remaining: capacity checks on the alternate feed itself (the alternate-feed status is topology-only).
 
 ## Phase 3 — Constrained recovery planning
+
+- Done: `services/recovery.jac` generates deterministic candidate options (back-feed paths around the fault, priority-only, isolate), checks each against path, link, asset and donor/supply capacity, records rejection reasons, and recommends the best feasible option; `recovery_plan()` endpoint and Overview/Reports UI. The planner logic was first written by Member 2 in `agents/tools.jac` and moved here.
+- Remaining: applying a recommended option to the simulation (reversible "apply recovery"), and normally-open tie switches so some scenarios have a feasible restoration.
 
 - Generate deterministic candidate recovery actions from graph evidence, respecting link capacity and facility priority.
 - Add independent constraint verification and rejection reasons before presenting recommendations.
@@ -27,7 +30,7 @@
 
 ## Phase 4 — Real agent collaboration
 
-- In progress (Member 2, `agents/`): five agents with deterministic tools, evidence-cited byLLM output on services incidents/evidence, a bounded verify/re-plan loop, run persistence, a not-configured mode, and MockLLM tests. `plan_recovery`/`check_option` in `agents/tools.jac` provisionally implement the services recovery contract until the services planner lands.
+- In progress (Member 2, `agents/`): five agents with deterministic tools, evidence-cited byLLM output on services incidents/evidence, a bounded verify/re-plan loop, run persistence, a not-configured mode, and MockLLM tests. `plan_recovery`/`check_option` now come from `services/recovery.jac`, re-exported by `agents/tools.jac`.
 
 - Add Jac walkers for Monitoring, Impact Investigation, Recovery Planning, Verification and Coordination.
 - Use structured byLLM outputs only where language reasoning is useful; keep graph mathematics deterministic.
