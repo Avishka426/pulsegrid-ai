@@ -34,13 +34,18 @@ jac check main.jac
 jac test
 ```
 
-Tests live in `services/graphService.test.jac` (an annex of the service module). They build their own transient copy of the synthetic network and never touch `root`, so they do not read or modify the dashboard's persisted graph. They cover traversal order and hop counts, shared-feeder de-duplication, alternate-feed detection, each scenario's target and resulting statuses, scenario replacement, unknown-scenario rejection and reset.
+Tests live in `services/tests/` (`*_tests.jac`, with shared helpers in `fixtures.jac`); `jac.toml` sets `[test] directory = "."` so `jac test` collects them. They build their own transient copy of the synthetic network and never touch `root`, so they do not read or modify the dashboard's persisted graph. They cover traversal order and hop counts, shared-feeder de-duplication, alternate-feed detection, each scenario's target and resulting statuses, scenario replacement, unknown-scenario rejection and reset.
 
 ## Project map
 
 - `main.jac` — Jac application entry, endpoint registration and client mount.
-- `services/graphService.jac` — native Jac node/edge graph, deterministic seed, downstream-trace walker and server operations.
-- `services/graphService.test.jac` — traversal, scenario and reset tests.
+- `services/models.jac` — `Infrastructure` node, `PowerLink` edge, view objects and status constants.
+- `services/seed.jac` — deterministic 14-asset network and first-use seeding on `root`.
+- `services/walkers.jac` — `DownstreamTrace` walker and downstream/alternate-feed analysis.
+- `services/scenarios.jac` — scenario definitions and fault/reset state transitions.
+- `services/views.jac` — link views and the `GraphSnapshot` returned to clients.
+- `services/graphService.jac` — server endpoints (`read_graph`, `apply_fault`, `reset_graph`); re-exports the types clients import.
+- `services/tests/` — traversal, scenario, view and reset tests.
 - `components/PulseGridDashboard.jac` — Jac client dashboard and simulation controls.
 - `styles/global.css` — Tailwind v4 and themed shadcn design tokens.
 - `PROJECT_PLAN.md` — delivered phase and next phase boundaries.
