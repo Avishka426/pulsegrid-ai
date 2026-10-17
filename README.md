@@ -6,7 +6,7 @@ PulseGrid AI is a Jac full-stack, synthetic educational distribution-grid simula
 
 ## Current phase
 
-- Jac 0.34.23 web-app; Jac owns the graph model, server operations and browser UI.
+- Jac 0.16.7 full-stack app (`jaclang` + `jac-client`); Jac owns the graph model, server operations and browser UI.
 - A deterministic 14-asset, 14-link example network is initialized on first graph read.
 - The dashboard reads graph state through Jac server functions and can apply a reproducible demo fault or reset the network.
 - The three scenarios fault one explicit asset each: Transformer Overheating → `TR-01`, Substation Failure → `SUB-01`, Distribution Line Overload → `J-01` (modelled as a fault at the West Junction distribution node).
@@ -18,7 +18,7 @@ All data is synthetic. There are no real infrastructure connections or automatic
 
 ## Requirements
 
-Install the Jac toolchain matching Jac 0.34.23 and Bun (used by Jac's client dependency installer). No API keys or paid services are needed for Phase 1.
+Install the Jac toolchain matching Jac 0.16.7 (`pip install jaclang jac-client`). `jac install` provisions a project-local Bun automatically for client dependencies; no separate Bun install is required. No API keys or paid services are needed for Phase 1.
 
 ## Run locally
 
@@ -41,7 +41,7 @@ Tests live in `services/graphService.test.jac` (an annex of the service module).
 - `main.jac` — Jac application entry, endpoint registration and client mount.
 - `services/graphService.jac` — native Jac node/edge graph, deterministic seed, downstream-trace walker and server operations.
 - `services/graphService.test.jac` — traversal, scenario and reset tests.
-- `components/PulseGridDashboard.jac` — Jac client dashboard and simulation controls.
+- `components/PulseGridDashboard.cl.jac` — Jac client dashboard and simulation controls.
 - `styles/global.css` — Tailwind v4 and themed shadcn design tokens.
 - `PROJECT_PLAN.md` — delivered phase and next phase boundaries.
 

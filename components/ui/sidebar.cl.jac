@@ -24,7 +24,7 @@ glob SIDEBAR_COOKIE_NAME: str = "sidebar_state",
              "variants": {
                  "variant": {
                      "default": "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                     "outline": "bg-background hover:bg-sidebar-accent hover:text-sidebar-accent-foreground shadow-[0_0_0_1px_var(--sidebar-border)] hover:shadow-[0_0_0_1px_var(--sidebar-accent)]"
+                     "outline": "bg-background hover:bg-sidebar-accent hover:text-sidebar-accent-foreground shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]"
                  },
                  "size": {
                      "default": "h-8 text-sm",
@@ -85,7 +85,7 @@ def:pub SidebarProvider(props: any) -> JsxElement {
             } else {
                 _setOpen(nextState);
             }
-            document.cookie = f"{SIDEBAR_COOKIE_NAME}={nextState}; path=/; max-age={SIDEBAR_COOKIE_MAX_AGE}";
+            document.cookie = f"{SIDEBAR_COOKIE_NAME}={nextState}; path=/; max-age={SIDEBAR_COOKIE_MAX_AGE}";  # jac:ignore[W6001]
         },
         [setOpenProp, open]
     );
@@ -496,7 +496,11 @@ def:pub SidebarMenuBadge(props: any) -> JsxElement {
 def:pub SidebarMenuSkeleton(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     showIcon = props["showIcon"] or False;
-    widthState = useState(lambda -> any { return f"{int(Math.random() * 40 + 50)}%"; });
+    widthState = useState(
+        lambda -> any { return f"{int(
+            Math.random() * 40 + 50
+        )}%"; }  # jac:ignore[W6001]
+    );
     width = widthState[0];
     skeletonStyle = {"--skeleton-width": width};
     return

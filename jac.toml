@@ -3,10 +3,10 @@ name = "pulsegrid-ai"
 version = "0.1.0"
 description = "Agentic Power Grid Incident Intelligence & Recovery Simulator"
 entry-point = "main.jac"
-kind = "web-app"
+kind = "fullstack"
 
-[byllm]
-[byllm.model]
+[plugins.byllm]
+[plugins.byllm.model]
 default_model = "${LLM_MODEL:-gpt-4o-mini}"
 api_key = "${OPENAI_API_KEY:-}"
 
@@ -67,12 +67,12 @@ watchdog = ">=3.0.0"
 [serve]
 base_route_app = "app"
 
-[client]
-[client.vite]
+[plugins.client]
+[plugins.client.vite]
 plugins = ["tailwindcss()"]
 lib_imports = ["import tailwindcss from '@tailwindcss/vite'"]
 
-[client.app_meta_data]
+[plugins.client.app_meta_data]
 title = "PulseGrid AI"
 description = "Synthetic grid incident intelligence and recovery simulator."
 keywords = "jac, power grid, incident simulator, AI"
@@ -83,10 +83,6 @@ og_title = "PulseGrid AI"
 og_description = "Monitor. Investigate. Recover."
 og_site_name = "PulseGrid AI"
 
-
-[scale]
-[scale.microservices]
-enabled = false
 
 [jacpack]
 name = 'pulsegrid-ai'

@@ -2,7 +2,7 @@
 
 ## Phase 1 — Foundation (implemented)
 
-- Jac 0.34.23 web application and dark operational dashboard.
+- Jac 0.16.7 full-stack application and dark operational dashboard.
 - Native Jac `Infrastructure` node and typed `PowerLink` edge model.
 - Deterministic synthetic 14-node, 14-link distribution network and three named scenarios.
 - Jac server endpoints to seed/read graph, apply a selected scenario fault and restore baseline state.
