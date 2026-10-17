@@ -15,7 +15,8 @@ PulseGrid AI is a Jac full-stack, synthetic educational distribution-grid simula
 - Typed recovery-planning contracts (`RecoveryAction`, `ConstraintCheck`, `RecoveryOption`, `RecoveryPlan`) are defined in `services/models.jac` for upcoming work. Nothing produces them yet, and no recovery plan is generated or shown.
 - The dashboard draws the network from graph data, colouring each asset and link as normal, fault, de-energized or alternate feed, shaping each node by category (diamond/square/triangle/hexagon/pentagon/octagon/heptagon/circle), and lists downstream assets with hops, status, load and interrupted end-use load.
 - Clicking or keyboard-selecting (Enter/Space) a node in the diagram, the asset register or the downstream-impact table shows its details — category, capacity, load, criticality, status, connected links and downstream hops when faulted — in the Asset Details panel.
-- The dashboard is split into reusable Jac components (`Sidebar`, `Header`, `MetricCards`, `NetworkDiagram`, `AssetDetails`, `DownstreamImpactPanel`, `IncidentTimeline`, `SimulationControls`, `AgentActivityPanel`, `RecoveryPanel`) composed by page-level shells under `components/pages/`, with sidebar navigation to real routes; routes without built content (`Network Explorer`, `Incident Center`, `Agent Intelligence`, `Simulation Lab`, `Reports`) show an explicit "not built yet" state rather than placeholder or fabricated data.
+- The dashboard is split into reusable Jac components (`Sidebar`, `Header`, `MetricCards`, `NetworkDiagram`, `AssetDetails`, `DownstreamImpactPanel`, `IncidentTimeline`, `SimulationControls`, `AgentActivityPanel`, `RecoveryPanel`) composed by page-level shells under `components/pages/`, with sidebar navigation to real routes.
+- Every sidebar page has real content: **Network Explorer** (search and filter assets, asset and link tables, details), **Incident Center** (incident history with each incident's evidence), **Agent Intelligence** (agent status, what each agent does, a run button enabled only with a model token, stored runs with their steps), **Simulation Lab** (all three scenarios' impact side by side, computed on a copy of the network, with apply and reset) and **Reports** (a printable summary from live data).
 - Renders in dark mode by default (the theme toggle described in an earlier draft was never built, so this is the only mode today).
 - Five investigation agents run through backend endpoints when a model token is configured (see [Agents](#agents)). The dashboard's Agent activity panel shows the real state from `agent_status` and `list_agent_runs` (not configured, or ready with the model name and stored run count). Starting and viewing runs from the dashboard is upcoming. No real-world switching or real topology is claimed.
 
@@ -56,10 +57,11 @@ Tests live in `services/tests/` (`*_tests.jac`, with shared helpers in `fixtures
 - `services/scenarios.jac` — scenario definitions and fault/reset state transitions.
 - `services/incidents.jac` — incident records, evidence and history.
 - `services/views.jac` — link views and the `GraphSnapshot` returned to clients.
-- `services/graphService.jac` — server endpoints (`read_graph`, `apply_fault`, `reset_graph`, `list_incidents`); re-exports the types clients import.
+- `services/graphService.jac` — server endpoints (`read_graph`, `apply_fault`, `reset_graph`, `list_incidents`, `get_incident`, `list_scenarios`, `preview_scenario`); re-exports the types clients import.
 - `services/tests/` — traversal, scenario, view, reset, incident and endpoint tests.
 - `components/pages/OverviewPage.cl.jac` — the stateful dashboard page; owns graph state, scenario selection and node selection, and composes the section components below.
-- `components/pages/UpcomingPage.cl.jac` — shared "not built yet" page for sidebar routes with no content in this phase.
+- `components/pages/NetworkExplorerPage.cl.jac`, `IncidentCenterPage.cl.jac`, `AgentIntelligencePage.cl.jac`, `SimulationLabPage.cl.jac`, `ReportsPage.cl.jac` — the other sidebar pages.
+- `components/status_style.cl.jac` — shared status colours and labels.
 - `components/Sidebar.cl.jac`, `components/Header.cl.jac` — shared navigation shell and page header, used by every page.
 - `components/MetricCards.cl.jac`, `components/NetworkDiagram.cl.jac`, `components/AssetDetails.cl.jac`, `components/DownstreamImpactPanel.cl.jac`, `components/IncidentTimeline.cl.jac`, `components/SimulationControls.cl.jac`, `components/AgentActivityPanel.cl.jac`, `components/RecoveryPanel.cl.jac` — dashboard sections.
 - `components/ui/`, `lib/utils.jac` — shadcn primitives and the `cn()` helper, managed by `jac install --shadcn`; never hand-edited.
@@ -117,15 +119,16 @@ jac start --dev main.jac
 - To use another model, set `LLM_MODEL`, for example `huggingface/groq/openai/gpt-oss-120b` to pin a provider, or `huggingface/Qwen/Qwen3-235B-A22B-Instruct-2507`. Other providers byLLM supports (OpenAI, Anthropic, Ollama, local models) read their own key variables.
 - Without a token, `agent_status()` reports `configured: false` and `run_investigation` returns `not_configured`; nothing is faked.
 
-## Demo script (about 3 minutes)
+## Demo script (about 4 minutes)
 
-1. **Baseline** — open the app; point out the Overview metrics (14 nodes, 0 incidents, Nominal health) and the synthetic-data badge.
-2. **Fault** — in Simulation Controls, pick "Transformer Overheating" and click Simulate fault; the diagram recolors `TR-01` and its downstream links, and the incident timeline updates.
-3. **Downstream impact** — scroll to Downstream Impact: show the hop-counted table, the de-energized vs. alternate-feed split (Water Works stays fed from Harbor Junction), and the interrupted end-use load.
-4. **Node selection** — click `TR-01` in the diagram (or press Tab to it and hit Enter); Asset Details shows its category, capacity, load, criticality and connected links. Click a downstream row to inspect that asset instead.
-5. **Recovery plan** — point out the Recovery panel's honest "not implemented yet" state — no fabricated recovery options.
-6. **Agent activity** — the Agent activity panel reads the real configuration: "Not configured" with no token, or "Ready" with the model name and stored run count once `HUGGINGFACE_API_KEY` is set. The sidebar's other routes show an explicit "not built yet" state rather than placeholder data.
-7. **Reset** — click Reset simulation to return to baseline.
+1. **Simulation Lab** — compare the three scenarios side by side (downstream assets, de-energized vs. alternate feed, load lost). Point out that previews run on a copy of the network, then click **Apply to network** on Substation Failure.
+2. **Overview** — the diagram recolors `SUB-01` and its downstream links; show the hop-counted Downstream impact table and that Water Works stays fed from Harbor Junction.
+3. **Node selection** — click `TR-01` (or Tab to it and press Enter) to see its details; click a downstream row to inspect that asset.
+4. **Incident Center** — the new incident is active, with its evidence records (fault, de-energized and alternate-feed assets, hops, MW). Earlier incidents show as superseded or resolved.
+5. **Network Explorer** — search `TR`, filter by status "De-energized", and read the asset and link tables.
+6. **Agent Intelligence** — without a token it honestly shows "Not configured"; with `HUGGINGFACE_API_KEY` set, run an investigation and walk through its steps and evidence-cited recommendation.
+7. **Reports** — the printable summary of the current state, incident history, scenario comparison and agent runs.
+8. **Reset** — Reset simulation (Overview) or Reset network (Simulation Lab) returns to baseline.
 
 ## Jac language share
 

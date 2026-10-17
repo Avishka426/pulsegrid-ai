@@ -110,6 +110,34 @@ obj GraphSnapshot {
     has evidence: list[Evidence] = [];
 }
 
+# A scenario as shown to clients, with its target asset resolved.
+obj ScenarioInfo {
+    has identifier: str;
+    has title: str;
+    has target_id: str;
+    has target_name: str = "";
+    has target_category: str = "";
+}
+
+# A scenario's impact computed on a transient copy of the network; the stored
+# graph is not changed.
+obj ScenarioPreview {
+    has scenario_id: str;
+    has title: str;
+    has target_id: str;
+    has target_name: str = "";
+    has downstream: list[DownstreamAsset] = [];
+    has de_energized: int = 0;
+    has alternate_feed: int = 0;
+    has interrupted_load_mw: float = 0.0;
+    has critical_interrupted: int = 0;
+}
+
+obj IncidentDetail {
+    has incident: Incident;
+    has evidence: list[Evidence] = [];
+}
+
 obj Scenario {
     has identifier: str;
     has title: str;

@@ -74,3 +74,29 @@ def test_a_fresh_store_seeds_the_baseline_network_with_no_incidents(client):
     assert (len(snap["nodes"]), len(snap["links"])) == (14, 14)
     assert (snap["fault_active"], snap["incident_id"]) == (False, "")
     assert call(client, "list_incidents", {}) == []
+
+
+def test_list_scenarios_returns_targets(client):
+    scenarios = call(client, "list_scenarios", {})
+    assert [(s["identifier"], s["target_id"]) for s in scenarios] == [("transformer", "TR-01"), ("substation", "SUB-01"), ("line", "J-01")]
+
+
+def test_preview_scenario_leaves_the_stored_graph_unchanged(client):
+    before = call(client, "read_graph", {})
+    preview = call(client, "preview_scenario", {"scenario_id": "substation"})
+    assert (len(preview["downstream"]), preview["de_energized"], preview["alternate_feed"]) == (9, 8, 1)
+    after = call(client, "read_graph", {})
+    assert (after["fault_active"], after["fault_id"]) == (False, "")
+    assert [n["operational_status"] for n in after["nodes"]] == [n["operational_status"] for n in before["nodes"]]
+    assert call(client, "list_incidents", {}) == []
+
+
+def test_get_incident_returns_evidence_for_current_and_past_incidents(client):
+    call(client, "apply_fault", {"scenario_id": "transformer"})
+    call(client, "apply_fault", {"scenario_id": "line"})
+    past = call(client, "get_incident", {"identifier": "INC-0001"})
+    assert (past["incident"]["status"], past["incident"]["fault_id"]) == ("superseded", "TR-01")
+    assert [e["identifier"] for e in past["evidence"]] == [f"INC-0001/EV-{i:02d}" for i in range(1, 6)]
+    current = call(client, "get_incident", {"identifier": "INC-0002"})
+    assert (current["incident"]["status"], len(current["evidence"])) == ("active", 4)
+    assert call(client, "get_incident", {"identifier": "INC-9999"}) is None

@@ -1,7 +1,7 @@
 # Incident records and the evidence gathered from each fault simulation.
 
 import from .models {
-    Infrastructure, Scenario, Incident, Evidence, HasEvidence,
+    Infrastructure, Scenario, Incident, Evidence, HasEvidence, IncidentDetail,
     STATUS_FAULT, STATUS_DE_ENERGIZED, STATUS_ALTERNATE_FEED,
     INCIDENT_ACTIVE, INCIDENT_SUPERSEDED, INCIDENT_RESOLVED, INCIDENT_HISTORY_LIMIT
 }
@@ -50,6 +50,13 @@ def stored_incidents() -> list[Incident] {
 
 def _by_sequence(incident: Incident) -> int {
     return incident.sequence;
+}
+
+def incident_detail(identifier: str) -> IncidentDetail | None {
+    for incident in stored_incidents() {
+        if incident.identifier == identifier { return IncidentDetail(incident=incident, evidence=evidence_of(incident)); }
+    }
+    return None;
 }
 
 def active_incident() -> Incident | None {
