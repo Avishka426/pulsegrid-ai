@@ -11,6 +11,8 @@ PulseGrid AI is a Jac full-stack, synthetic educational distribution-grid simula
 - The dashboard reads graph state through Jac server functions and can apply a reproducible demo fault or reset the network.
 - The three scenarios fault one explicit asset each: Transformer Overheating → `TR-01`, Substation Failure → `SUB-01`, Distribution Line Overload → `J-01` (modelled as a fault at the West Junction distribution node).
 - Fault simulation computes downstream impact with a `DownstreamTrace` walker: a deterministic breadth-first traversal of outgoing `PowerLink` edges from the faulted node, recording each reachable asset once with its hop count. The same walker, run from the power source with the faulted node blocked, identifies downstream assets that still have an alternate supply path in the graph (for example Water Works, which is also fed from Harbor Junction).
+- Each simulated fault records an `Incident` node (`INC-0001`, `INC-0002`, … from a per-graph counter, not the clock) linked by `HasEvidence` edges to `Evidence` nodes: one for the faulted asset and one per downstream asset, in breadth-first order, with stable IDs such as `INC-0001/EV-03`. A new fault marks the previous incident `superseded`, reset marks it `resolved`, and the newest 20 incidents are kept. `GraphSnapshot` carries the active `incident_id` and its `evidence`; `list_incidents` returns the history, newest first.
+- Typed recovery-planning contracts (`RecoveryAction`, `ConstraintCheck`, `RecoveryOption`, `RecoveryPlan`) are defined in `services/models.jac` for upcoming work. Nothing produces them yet, and no recovery plan is generated or shown.
 - The dashboard draws the network from graph data, colouring each asset and link as normal, fault, de-energized or alternate feed, and lists downstream assets with hops, status, load and interrupted end-use load.
 - Agent activity is explicitly inactive. No AI investigation, agent runs, switching recommendations, or real-world topology are claimed.
 
@@ -34,7 +36,7 @@ jac check main.jac
 jac test
 ```
 
-Tests live in `services/tests/` (`*_tests.jac`, with shared helpers in `fixtures.jac`); `jac.toml` sets `[test] directory = "."` so `jac test` collects them. They build their own transient copy of the synthetic network and never touch `root`, so they do not read or modify the dashboard's persisted graph. They cover traversal order and hop counts, shared-feeder de-duplication, alternate-feed detection, each scenario's target and resulting statuses, scenario replacement, unknown-scenario rejection and reset.
+Tests live in `services/tests/` (`*_tests.jac`, with shared helpers in `fixtures.jac`); `jac.toml` sets `[test] directory = "."` so `jac test` collects them. They build their own transient copy of the synthetic network and never touch `root`, so they do not read or modify the dashboard's persisted graph. They cover traversal order and hop counts, shared-feeder de-duplication, alternate-feed detection, each scenario's target and resulting statuses, scenario replacement, unknown-scenario rejection, reset and incident evidence. `services/tests/endpoints_tests.jac` exercises the HTTP endpoints through `JacTestClient`, each test with its own temporary store, so it never touches the dev graph either.
 
 ## Project map
 
@@ -43,9 +45,10 @@ Tests live in `services/tests/` (`*_tests.jac`, with shared helpers in `fixtures
 - `services/seed.jac` — deterministic 14-asset network and first-use seeding on `root`.
 - `services/walkers.jac` — `DownstreamTrace` walker and downstream/alternate-feed analysis.
 - `services/scenarios.jac` — scenario definitions and fault/reset state transitions.
+- `services/incidents.jac` — incident records, evidence and history.
 - `services/views.jac` — link views and the `GraphSnapshot` returned to clients.
-- `services/graphService.jac` — server endpoints (`read_graph`, `apply_fault`, `reset_graph`); re-exports the types clients import.
-- `services/tests/` — traversal, scenario, view and reset tests.
+- `services/graphService.jac` — server endpoints (`read_graph`, `apply_fault`, `reset_graph`, `list_incidents`); re-exports the types clients import.
+- `services/tests/` — traversal, scenario, view, reset, incident and endpoint tests.
 - `components/PulseGridDashboard.jac` — Jac client dashboard and simulation controls.
 - `styles/global.css` — Tailwind v4 and themed shadcn design tokens.
 - `PROJECT_PLAN.md` — delivered phase and next phase boundaries.
@@ -56,7 +59,8 @@ Tests live in `services/tests/` (`*_tests.jac`, with shared helpers in `fixtures
 - Only one fault is active at a time; applying a scenario first resets the network.
 - Interrupted load sums de-energized end-use assets (assets with no outgoing links) to avoid double counting. The "modeled load" headline figure still sums every asset's `load_mw`, including pass-through equipment, so it overstates total demand.
 - The diagram layout coordinates for the 14 synthetic asset IDs are fixed in the dashboard component; new assets would need a layout entry.
-- Endpoints are not covered by automated tests; server functions were exercised manually against a running app.
+- Endpoint tests run through `JacTestClient` with a temporary store per test. The one-time upgrade of graphs stored before the `services/` split (see `services/seed.jac`) was verified manually, not by an automated test.
+- Scenarios are static definitions (`obj`), not graph entities; only incidents and evidence are stored on the graph.
 
 ## Portability and configuration
 
