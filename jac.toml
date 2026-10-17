@@ -64,6 +64,16 @@ tailwindcss = "4.3.3"
 [dev-dependencies.pypi]
 watchdog = ">=3.0.0"
 
+[placement.pins]
+# Graph logic and endpoints run on the server; clients call them over RPC.
+# Without this, modules with no node/edge/walker of their own get pulled
+# into the browser bundle.
+"services.*" = "server"
+
+[test]
+# Collect tests project-wide (services/tests, and future agents/ tests).
+directory = "."
+
 [serve]
 base_route_app = "app"
 
