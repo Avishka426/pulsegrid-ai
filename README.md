@@ -20,7 +20,13 @@ All data is synthetic. There are no real infrastructure connections or automatic
 
 ## Requirements
 
-Install the Jac CLI, version 0.37.x (verified with 0.37.25). No API keys or paid services are needed for Phase 1.
+Install the Jac CLI 0.37.25 (the official native binary):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/jaseci-labs/jaseci/main/scripts/install.sh | bash -s -- --version 0.37.25
+```
+
+No API keys or paid services are needed for the current features.
 
 ## Run locally
 
@@ -62,9 +68,25 @@ Tests live in `services/tests/` (`*_tests.jac`, with shared helpers in `fixtures
 - Endpoint tests run through `JacTestClient` with a temporary store per test. The one-time upgrade of graphs stored before the `services/` split (see `services/seed.jac`) was verified manually, not by an automated test.
 - Scenarios are static definitions (`obj`), not graph entities; only incidents and evidence are stored on the graph.
 
+## AI model configuration (for upcoming agents)
+
+The agents are not built yet, so nothing calls a model today. When they arrive they will use byLLM with an open-weight model served through Hugging Face Inference Providers:
+
+The default model is `huggingface/openai/gpt-oss-120b` (Apache-2.0, not gated, served by several providers). Create a free Hugging Face access token at huggingface.co/settings/tokens (fine-grained, with "Make calls to Inference Providers"), then export it before starting the app:
+
+```sh
+export HUGGINGFACE_API_KEY=hf_...
+jac run --dev
+```
+
+- Jac does not load `.env` for `jac run`, so export the variable in your shell or shell profile. Never commit a real token.
+- Free Hugging Face accounts get a small monthly inference credit, so heavy use may need a paid plan. Check usage at huggingface.co/settings/billing.
+- To use another model, set `LLM_MODEL`, for example `huggingface/groq/openai/gpt-oss-120b` to pin a provider, or `huggingface/Qwen/Qwen3-235B-A22B-Instruct-2507`. Other providers byLLM supports (OpenAI, Anthropic, Ollama, local models) read their own key variables.
+- Without a token, agent features must report that they are not configured rather than produce any output.
+
 ## Portability and configuration
 
-The project uses standard Jac web-app tooling and project-local source. Do not commit credentials, generated dependencies or `.jac/` runtime state. `.env.example` lists optional future LLM configuration; Phase 1 does not read or require those values. JacHammer-specific project identifiers in `jac.toml` (`[jachammer]`, `[jacpack]`) are hosting metadata and are not required for local execution. The project moved from Jac 0.34.23 to 0.37.x so it can be installed and run from a fresh clone; a JacHammer workspace still on 0.34.23 may not run it (0.37 changed `jac.toml` keys and removed `sv import`).
+The project uses standard Jac web-app tooling and project-local source. Do not commit credentials, generated dependencies or `.jac/` runtime state. `.env.example` lists the optional AI agent configuration (see below); the current app does not read or require it. JacHammer-specific project identifiers in `jac.toml` (`[jachammer]`, `[jacpack]`) are hosting metadata and are not required for local execution. The project moved from Jac 0.34.23 to 0.37.x so it can be installed and run from a fresh clone; a JacHammer workspace still on 0.34.23 may not run it (0.37 changed `jac.toml` keys and removed `sv import`).
 
 ## Hackathon implementation boundary
 
