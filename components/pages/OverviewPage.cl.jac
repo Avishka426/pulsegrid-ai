@@ -1,4 +1,4 @@
-sv import from ...services.graphService { Infrastructure, GraphSnapshot, read_graph, apply_fault, reset_graph }
+sv import from ...services.graphService { Infrastructure, GraphSnapshot, RecoveryPlan, read_graph, apply_fault, reset_graph, recovery_plan }
 import from ..Sidebar { Sidebar }
 import from ..Header { Header }
 import from ..MetricCards { MetricCards }
@@ -17,6 +17,7 @@ def:pub OverviewPage() -> JsxElement {
     has loading: bool = True;
     has error_message: str = "";
     has selected_id: str = "";
+    has plan: RecoveryPlan | None = None;
     has agents: AgentStatus | None = None;
     has agent_runs: int = 0;
     has agents_failed: bool = False;
@@ -24,6 +25,8 @@ def:pub OverviewPage() -> JsxElement {
     async can with entry {
         try {
             snapshot = await read_graph();
+            fresh_plan = await recovery_plan();
+            plan = fresh_plan;
             if snapshot.scenario_id != "" { scenario_id = snapshot.scenario_id; }
             loading = False;
         }
@@ -40,13 +43,23 @@ def:pub OverviewPage() -> JsxElement {
     def handle_select(identifier: str) { selected_id = identifier; }
     async def handle_fault {
         loading = True;
-        try { snapshot = await apply_fault(scenario_id); error_message = ""; }
+        try {
+            snapshot = await apply_fault(scenario_id);
+            fresh_plan = await recovery_plan();
+            plan = fresh_plan;
+            error_message = "";
+        }
         except Exception { error_message = "Fault simulation failed. Try again."; }
         loading = False;
     }
     async def handle_reset {
         loading = True;
-        try { snapshot = await reset_graph(); error_message = ""; selected_id = ""; }
+        try {
+            snapshot = await reset_graph();
+            plan = None;
+            error_message = "";
+            selected_id = "";
+        }
         except Exception { error_message = "Reset failed. Try again."; }
         loading = False;
     }
@@ -85,7 +98,7 @@ def:pub OverviewPage() -> JsxElement {
                     interrupted_load_mw={snapshot.interrupted_load_mw} critical_interrupted={snapshot.critical_interrupted}
                     selected_id={selected_id} onSelect={handle_select}
                 />
-                <RecoveryPanel fault_active={snapshot.fault_active} />
+                <RecoveryPanel plan={plan} fault_active={snapshot.fault_active} />
                 <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
                     <IncidentTimeline scenario_title={snapshot.scenario_title} fault_label={snapshot.fault_label} fault_id={snapshot.fault_id} active_faults={active_faults} downstream_count={len(snapshot.downstream)} />
                     <SimulationControls scenario_id={scenario_id} loading={loading} onScenarioChange={handle_scenario} onFault={handle_fault} onReset={handle_reset} />

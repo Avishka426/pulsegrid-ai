@@ -1,13 +1,26 @@
-sv import from ...services.graphService { GraphSnapshot, Incident, IncidentDetail, ScenarioPreview, read_graph, list_incidents, get_incident, list_scenarios, preview_scenario }
+sv import from ...services.graphService { GraphSnapshot, Incident, IncidentDetail, ScenarioPreview, RecoveryPlan, read_graph, list_incidents, get_incident, list_scenarios, preview_scenario, recovery_plan }
 sv import from ...agents.endpoints { AgentStatus, AgentRun, agent_status, list_agent_runs }
 import from ..Sidebar { Sidebar }
 import from ..Header { Header }
 import from ..status_style { status_text, status_dot, status_label }
 
+# One line describing the verified recovery plan's recommendation.
+def _recovery_summary(plan: RecoveryPlan) -> str {
+    rejected = len([o for o in plan.options if not o.feasible]);
+    for o in plan.options {
+        if o.identifier == plan.recommended_id {
+            what = o.actions[0].description if len(o.actions) > 0 else o.identifier;
+            return f"Recovery (simulated, advisory): {o.identifier} recommended: {what}. {rejected} of {len(plan.options)} options rejected by constraint checks.";
+        }
+    }
+    return f"Recovery: no option passes every constraint check ({len(plan.options)} evaluated).";
+}
+
 def:pub ReportsPage() -> JsxElement {
     has snapshot: GraphSnapshot = {"nodes": [], "links": [], "fault_active": False, "fault_label": "", "fault_id": "", "scenario_id": "", "scenario_title": "", "downstream": [], "interrupted_load_mw": 0.0, "critical_interrupted": 0} as GraphSnapshot;
     has incidents: list[Incident] = [];
     has active: IncidentDetail | None = None;
+    has recovery_line: str = "";
     has previews: list[ScenarioPreview] = [];
     has agents: AgentStatus | None = None;
     has runs: list[AgentRun] = [];
@@ -23,6 +36,8 @@ def:pub ReportsPage() -> JsxElement {
             if snap.incident_id != "" {
                 detail = await get_incident(snap.incident_id);
                 active = detail;
+                plan = await recovery_plan();
+                recovery_line = _recovery_summary(plan);
             }
             scenarios = await list_scenarios();
             collected: list[ScenarioPreview] = [];
@@ -78,6 +93,7 @@ def:pub ReportsPage() -> JsxElement {
             } else {
                 <div>
                     <p className="mt-2 text-sm">{f"{active.incident.identifier} · {active.incident.scenario_title} · fault at {active.incident.fault_id} · {len(snapshot.downstream)} downstream assets"}</p>
+                    {recovery_line != "" and <p className="mt-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">{recovery_line}</p>}
                     <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[520px] text-left text-xs">
                         <thead className="text-[10px] uppercase tracking-wide text-muted-foreground"><tr><th className="py-2 pr-3 font-medium">Evidence</th><th className="py-2 pr-3 font-medium">Kind</th><th className="py-2 pr-3 font-medium">Detail</th><th className="py-2 text-right font-medium">Load</th></tr></thead>
                         <tbody>
