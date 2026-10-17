@@ -11,9 +11,10 @@
 
 ## Phase 2 — Evidence-based investigation
 
-- Add tested deterministic reachability and affected-facility traversal from faulted node through energized links.
-- Represent scenarios and incident evidence as typed graph entities; add walker endpoints for real graph traversal.
-- Surface affected nodes and link outages with capacity/criticality context; make scenario targets explicit and stable.
+- Done: tested deterministic downstream reachability from the faulted node (`DownstreamTrace` walker), with hop counts, alternate-feed detection and interrupted end-use load.
+- Done: explicit, stable scenario targets (`TR-01`, `SUB-01`, `J-01`).
+- Done: dashboard shows affected assets and link outages from graph data with criticality context.
+- Remaining: represent scenarios and incident evidence as typed graph entities; endpoint-level tests; capacity checks on alternate feeds.
 
 ## Phase 3 — Constrained recovery planning
 
