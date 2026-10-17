@@ -17,7 +17,7 @@ PulseGrid AI is a Jac full-stack, synthetic educational distribution-grid simula
 - Clicking or keyboard-selecting (Enter/Space) a node in the diagram, the asset register or the downstream-impact table shows its details — category, capacity, load, criticality, status, connected links and downstream hops when faulted — in the Asset Details panel.
 - The dashboard is split into reusable Jac components (`Sidebar`, `Header`, `MetricCards`, `NetworkDiagram`, `AssetDetails`, `DownstreamImpactPanel`, `IncidentTimeline`, `SimulationControls`, `AgentActivityPanel`, `RecoveryPanel`) composed by page-level shells under `components/pages/`, with sidebar navigation to real routes; routes without built content (`Network Explorer`, `Incident Center`, `Agent Intelligence`, `Simulation Lab`, `Reports`) show an explicit "not built yet" state rather than placeholder or fabricated data.
 - Renders in dark mode by default (the theme toggle described in an earlier draft was never built, so this is the only mode today).
-- Five investigation agents run through backend endpoints when a model token is configured (see [Agents](#agents)). The dashboard's agent panel is not wired to them yet and still shows them as inactive. No real-world switching or real topology is claimed.
+- Five investigation agents run through backend endpoints when a model token is configured (see [Agents](#agents)). The dashboard's Agent activity panel shows the real state from `agent_status` and `list_agent_runs` (not configured, or ready with the model name and stored run count). Starting and viewing runs from the dashboard is upcoming. No real-world switching or real topology is claimed.
 
 All data is synthetic. There are no real infrastructure connections or automatic switching actions, and the network does not represent actual Sri Lankan grid topology. Use only for educational demonstration.
 
@@ -97,6 +97,7 @@ Model output is rejected if it cites evidence IDs that don't exist or states num
 - The "end-use load" headline and interrupted-load figure both sum only assets with no outgoing links, so pass-through equipment (substations, transformers, junctions) is not double counted.
 - The diagram layout coordinates for the 14 synthetic asset IDs are fixed in `components/NetworkDiagram.cl.jac`; new assets would need a layout entry.
 - Category shapes are a fixed lookup over the network's 8 known categories; a new category would need a `CATEGORY_SHAPE` entry in `components/NetworkDiagram.cl.jac`.
+- The registry-managed `components/ui/` primitives spread every prop onto the DOM after their own merged `className`. Passing `className` to a primitive replaces its built-in classes, so components wrap primitives instead; and `SidebarMenuButton`'s `asChild`/`isActive` props trigger React development-only "unknown prop" console warnings. Both come from the upstream registry (identical when regenerated with `jac install --shadcn`); `components/ui/` is not hand-edited.
 - Endpoint tests run through `JacTestClient` with a temporary store per test. The one-time upgrade of graphs stored before the `services/` split (see `services/seed.jac`) was verified manually, not by an automated test.
 - Scenarios are static definitions (`obj`), not graph entities; only incidents and evidence are stored on the graph.
 
@@ -123,12 +124,12 @@ jac start --dev main.jac
 3. **Downstream impact** — scroll to Downstream Impact: show the hop-counted table, the de-energized vs. alternate-feed split (Water Works stays fed from Harbor Junction), and the interrupted end-use load.
 4. **Node selection** — click `TR-01` in the diagram (or press Tab to it and hit Enter); Asset Details shows its category, capacity, load, criticality and connected links. Click a downstream row to inspect that asset instead.
 5. **Recovery plan** — point out the Recovery panel's honest "not implemented yet" state — no fabricated recovery options.
-6. **Agent activity** — point out the Agent Activity panel's "Not configured · no runs" state, and the sidebar's other routes showing an explicit "not built yet" state rather than placeholder data.
+6. **Agent activity** — the Agent activity panel reads the real configuration: "Not configured" with no token, or "Ready" with the model name and stored run count once `HUGGINGFACE_API_KEY` is set. The sidebar's other routes show an explicit "not built yet" state rather than placeholder data.
 7. **Reset** — click Reset simulation to return to baseline.
 
 ## Jac language share
 
-Handwritten executable source (`.jac` files, excluding the registry-managed `components/ui/` and `lib/utils.cl.jac`, `.jac/` runtime state, and `node_modules/`) is **100% Jac** — there is no handwritten JavaScript or TypeScript application logic. As of this phase: ~1,000 lines across `main.jac`, `services/` and `components/`, plus `styles/global.css` for Tailwind/shadcn design tokens.
+Handwritten executable source is about **97% Jac** (2,610 lines of `.jac` across `main.jac`, `services/`, `agents/` and `components/`, excluding the registry-managed `components/ui/` and `lib/`, `.jac/` runtime state and `node_modules/`). The only non-Jac handwritten file is the 76-line pytest endpoint test `services/tests/test_endpoints.py`, which Jac 0.34 requires for `JacTestClient`. There is no handwritten JavaScript or TypeScript.
 
 ## Portability and configuration
 
