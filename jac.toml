@@ -2,7 +2,7 @@
 name = "pulsegrid-ai"
 version = "0.1.0"
 description = "Agentic Power Grid Incident Intelligence & Recovery Simulator"
-entry-point = "main"
+entry-point = "main.jac"
 kind = "web-app"
 
 [byllm]
@@ -64,19 +64,17 @@ tailwindcss = "4.3.3"
 
 
 
-[dev-dependencies.pypi]
+[dev-dependencies]
 watchdog = ">=3.0.0"
 
-[placement.pins]
-# Graph logic and endpoints run on the server; clients call them over RPC.
-# Without this, modules with no node/edge/walker of their own get pulled
-# into the browser bundle.
-"services.*" = "server"
-# Agents call byLLM and the graph; they must never be bundled for the browser.
-"agents.*" = "server"
+[scale]
+[scale.microservices]
+# Serve one app process; otherwise `sv import` spawns each imported module
+# as its own service behind a gateway.
+enabled = false
 
 [test]
-# Collect tests project-wide (services/tests, and future agents/ tests).
+# Collect tests project-wide (services/tests and agents/tests).
 directory = "."
 
 [serve]

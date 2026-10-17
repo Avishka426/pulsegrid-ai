@@ -39,7 +39,7 @@ def all_passed(checks: list[ConstraintCheck]) -> bool {
 }
 
 def mock(outputs: list[ImpactNarrative | PlanChoice | Recommendation]) -> None {
-    use_model(MockLLM(outputs=outputs));
+    use_model(MockLLM(model_name="mockllm", config={"outputs": outputs}));
 }
 
 def narrative() -> ImpactNarrative {

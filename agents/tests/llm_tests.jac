@@ -35,7 +35,7 @@ test "Hugging Face models use the Hugging Face token" {
 }
 
 test "agent default model matches the jac.toml default" {
-    toml_path = Path(__file__).resolve().parents[2] / "jac.toml";
+    toml_path = Path(str(__file__)).resolve().parents[2] / "jac.toml";
     configured = tomllib.loads(toml_path.read_text())["byllm"]["model"]["default_model"];
     assert configured == "${LLM_MODEL:-" + DEFAULT_MODEL + "}";
 }

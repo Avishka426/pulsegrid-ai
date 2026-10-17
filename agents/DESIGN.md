@@ -1,6 +1,6 @@
 # PulseGrid AI agents: design (Member 2)
 
-Status: **implemented and integrated with `main`** on Jac 0.37.25: the 0.37 migration, the `services/` module split, and Member 1's incident/evidence/recovery contracts. Sections 1–9 below are the original design; this section records what was actually built and where it differs.
+Status: **implemented and integrated with `main`**, now on Jac 0.34.23 (the stable line; briefly built on 0.37.25): the the `services/` module split, and Member 1's incident/evidence/recovery contracts. Sections 1–9 below are the original design; this section records what was actually built and where it differs.
 
 ## 0. As built
 
@@ -29,7 +29,7 @@ Other differences from the design below:
 
 **Provisional recovery logic** (until Member 1's planner lands). Options are: restore all reachable interrupted end-use loads (`OPT-1`), restore priority loads only (`OPT-2`), and keep the fault isolated (`OPT-3`). A restoration path is the shortest undirected path from an interrupted asset to the nearest energized asset that avoids the faulted asset (back-feed). Checks cover path availability, link headroom (capacity minus the load already carried while both ends are energized), capacity of each pass-through asset, donor headroom, and donor supply-link headroom. In the seed network every restoration fails at the Water Works back-feed (`L-10`, `L-14`, `FAC-02`), so the verifier always rejects a planner that picks restoration first. That is the re-planning demonstration.
 
-**Spike result, re-verified on 0.37.25.** A module-level `glob agent_llm: Model | MockLLM` with a setter passes `jac check`, and `MockLLM(outputs=[...])` returns typed objs in order. In 0.37 byLLM calls need litellm in `.jac/venv`, which `jac install` provides from the `[byllm]` table in `jac.toml`; MockLLM tests also need it.
+**Spike result, verified on 0.34.23.** A module-level `glob agent_llm: Model | MockLLM` with a setter passes `jac check`, and `MockLLM(model_name="mockllm", config={"outputs": [...]})` returns typed objs in order (0.37's `MockLLM(outputs=...)` form is not accepted on 0.34). byLLM calls need litellm in `.jac/venv`, which `jac install` provides from the `[byllm]` table in `jac.toml`; MockLLM tests also need it.
 
 ## 1. Principles
 
@@ -186,7 +186,7 @@ Contract objects. The fields the agents rely on are listed; Member 1 can add mor
   - `ollama/*` and `local:*` → configured only if `PULSEGRID_ALLOW_KEYLESS_MODEL=1`, since there is no key to detect
 - The key is never echoed, logged, stored on the graph, or returned.
 
-**Spike result (originally on Jac 0.34.23; re-verified on 0.37.25, see §0).** Typing the glob as plain `Model` fails `jac check` (E1053) when a `MockLLM` is assigned.
+**Spike result (Jac 0.34.23, see §0).** Typing the glob as plain `Model` fails `jac check` (E1053) when a `MockLLM` is assigned.
 
 ## 7. Tests (`agents/*.test.jac`, all MockLLM, no key)
 

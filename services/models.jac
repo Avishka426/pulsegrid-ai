@@ -1,7 +1,5 @@
 # Graph archetypes, view objects and shared constants for the synthetic network.
 
-# Aliases keep graphs persisted before the services/ split loadable.
-@archetype_alias("jac:[\"pulsegrid-ai\",\"services.graphService\"].Infrastructure")
 node Infrastructure {
     has identifier: str;
     has display_name: str;
@@ -12,7 +10,6 @@ node Infrastructure {
     has criticality: int = 1;
 }
 
-@archetype_alias("jac:[\"pulsegrid-ai\",\"services.graphService\"].PowerLink")
 edge PowerLink: Infrastructure --> Infrastructure {
     has identifier: str;
     has capacity_mw: float = 0.0;
