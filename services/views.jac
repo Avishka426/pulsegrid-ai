@@ -1,8 +1,9 @@
 # Read models returned to clients: link views and the graph snapshot.
 
-import from .models { Infrastructure, PowerLink, LinkView, GraphSnapshot }
+import from .models { Infrastructure, PowerLink, LinkView, GraphSnapshot, ScenarioInfo, ScenarioPreview }
 import from .walkers { compute_downstream }
-import from .scenarios { find_asset, fault_node, scenario_for_target }
+import from .seed { build_network }
+import from .scenarios { SCENARIOS, find_asset, fault_node, scenario_for_target, apply_scenario }
 
 def link_views(assets: list[Infrastructure]) -> list[LinkView] {
     views: list[LinkView] = [];
@@ -42,4 +43,27 @@ def snapshot(assets: list[Infrastructure]) -> GraphSnapshot {
         if item.criticality >= 4 { snap.critical_interrupted = snap.critical_interrupted + 1; }
     }
     return snap;
+}
+
+def scenario_infos() -> list[ScenarioInfo] {
+    assets = build_network();
+    infos: list[ScenarioInfo] = [];
+    for s in SCENARIOS {
+        target = find_asset(assets, s.target_id);
+        name = target.display_name if target is not None else "";
+        category = target.category if target is not None else "";
+        infos.append(ScenarioInfo(identifier=s.identifier, title=s.title, target_id=s.target_id, target_name=name, target_category=category));
+    }
+    return infos;
+}
+
+# Applies the scenario to a transient copy of the network, so the stored graph
+# is left untouched. Raises ValueError for an unknown scenario.
+def preview(scenario_id: str) -> ScenarioPreview {
+    assets = build_network();
+    target = apply_scenario(assets, scenario_id);
+    snap = snapshot(assets);
+    alternate = 0;
+    for d in snap.downstream { if d.alternate_feed { alternate = alternate + 1; } }
+    return ScenarioPreview(scenario_id=snap.scenario_id, title=snap.scenario_title, target_id=target.identifier, target_name=target.display_name, downstream=snap.downstream, de_energized=len(snap.downstream) - alternate, alternate_feed=alternate, interrupted_load_mw=snap.interrupted_load_mw, critical_interrupted=snap.critical_interrupted);
 }

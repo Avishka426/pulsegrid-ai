@@ -3,12 +3,13 @@
 
 import from .models {
     Infrastructure, PowerLink, LinkView, DownstreamAsset, GraphSnapshot, Incident, Evidence,
-    RecoveryAction, ConstraintCheck, RecoveryOption, RecoveryPlan
+    RecoveryAction, ConstraintCheck, RecoveryOption, RecoveryPlan,
+    ScenarioInfo, ScenarioPreview, IncidentDetail
 }
 import from .seed { network_assets }
 import from .scenarios { find_scenario, fault_node, mark_fault, apply_scenario, reset_assets }
-import from .views { snapshot }
-import from .incidents { stored_incidents, active_incident, open_incident, resolve_active_incident, evidence_of }
+import from .views { snapshot, scenario_infos, preview }
+import from .incidents { stored_incidents, active_incident, open_incident, resolve_active_incident, evidence_of, incident_detail }
 
 # Snapshot of the network plus the active incident, if any.
 def _current_snapshot(assets: list[Infrastructure]) -> GraphSnapshot {
@@ -47,4 +48,19 @@ def:pub reset_graph() -> GraphSnapshot {
 # Recorded incidents, newest first (at most INCIDENT_HISTORY_LIMIT).
 def:pub list_incidents() -> list[Incident] {
     return stored_incidents();
+}
+
+# The three scenarios with their target assets.
+def:pub list_scenarios() -> list[ScenarioInfo] {
+    return scenario_infos();
+}
+
+# A scenario's impact without applying it; the stored graph is not changed.
+def:pub preview_scenario(scenario_id: str) -> ScenarioPreview {
+    return preview(scenario_id);
+}
+
+# One recorded incident with its evidence, or None if it is not stored.
+def:pub get_incident(identifier: str) -> IncidentDetail | None {
+    return incident_detail(identifier);
 }
