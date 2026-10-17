@@ -66,7 +66,7 @@ def:pub NetworkDiagram(nodes: list[Infrastructure], links: list[LinkView], selec
                     }}
                     {for n in nodes {
                         <g key={n.identifier}
-                            className={STATUS_TEXT[n.operational_status] + (" opacity-100" if n.identifier == selected_id else " opacity-90")}
+                            className={"group " + STATUS_TEXT[n.operational_status] + (" opacity-100" if n.identifier == selected_id else " opacity-90")}
                             tabIndex={0}
                             role="button"
                             aria-label={f"{n.display_name} ({n.identifier}), {n.category}, " + STATUS_LABEL[n.operational_status]}
@@ -76,6 +76,7 @@ def:pub NetworkDiagram(nodes: list[Infrastructure], links: list[LinkView], selec
                             style={{"cursor": "pointer", "outline": "none"}}
                         >
                             <title>{f"{n.display_name} ({n.identifier}) · {n.category} · " + STATUS_LABEL[n.operational_status]}</title>
+                            <circle cx={LAYOUT[n.identifier][0]} cy={LAYOUT[n.identifier][1]} r="19" strokeWidth="2" className="fill-none stroke-foreground opacity-0 group-focus-visible:opacity-100"/>
                             {n.identifier == selected_id and <circle cx={LAYOUT[n.identifier][0]} cy={LAYOUT[n.identifier][1]} r="15" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3 2"/>}
                             {n.operational_status == "fault" and <circle cx={LAYOUT[n.identifier][0]} cy={LAYOUT[n.identifier][1]} r="15" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.5"/>}
                             {CATEGORY_SHAPE[n.category] == "circle" and <circle cx={LAYOUT[n.identifier][0]} cy={LAYOUT[n.identifier][1]} r="9" fill="currentColor" stroke="var(--background)" strokeWidth="2"/>}
