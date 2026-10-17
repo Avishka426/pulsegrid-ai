@@ -7,11 +7,14 @@ import from .models {
 }
 import from .walkers { compute_downstream }
 
-# Builds a transient incident for `fault` with one fault Evidence plus one per
-# downstream asset in breadth-first order. Identifiers depend only on the
-# sequence number and the graph, so the same inputs give the same records.
-def build_incident(assets: list[Infrastructure], scenario: Scenario, fault: Infrastructure, sequence: int) -> Incident {
-    incident = Incident(identifier=f"INC-{sequence:04d}", sequence=sequence, scenario_id=scenario.identifier, scenario_title=scenario.title, fault_id=fault.identifier);
+def new_incident(scenario: Scenario, fault: Infrastructure, sequence: int) -> Incident {
+    return Incident(identifier=f"INC-{sequence:04d}", sequence=sequence, scenario_id=scenario.identifier, scenario_title=scenario.title, fault_id=fault.identifier);
+}
+
+# Links one fault Evidence plus one per downstream asset, in breadth-first
+# order, to `incident`. Identifiers depend only on the sequence number and the
+# graph, so the same inputs give the same records.
+def record_evidence(incident: Incident, assets: list[Infrastructure], scenario: Scenario, fault: Infrastructure) -> None {
     records: list[Evidence] = [
         Evidence(identifier="", kind=STATUS_FAULT, asset_id=fault.identifier, detail=f"{fault.display_name} ({fault.identifier}) faulted in scenario {scenario.title}", value_mw=fault.load_mw)
     ];
@@ -27,6 +30,12 @@ def build_incident(assets: list[Infrastructure], scenario: Scenario, fault: Infr
         ev.identifier = f"{incident.identifier}/EV-{i + 1:02d}";
         incident +>:HasEvidence:+> ev;
     }
+}
+
+# A transient incident with its evidence, for tests and analysis.
+def build_incident(assets: list[Infrastructure], scenario: Scenario, fault: Infrastructure, sequence: int) -> Incident {
+    incident = new_incident(scenario, fault, sequence);
+    record_evidence(incident, assets, scenario, fault);
     return incident;
 }
 
@@ -57,8 +66,10 @@ def open_incident(assets: list[Infrastructure], scenario: Scenario, fault: Infra
         if old.status == INCIDENT_ACTIVE { old.status = INCIDENT_SUPERSEDED; }
     }
     sequence = history[0].sequence + 1 if len(history) > 0 else 1;
-    incident = build_incident(assets, scenario, fault, sequence);
+    # Attach before linking evidence (see ensure_network in seed.jac).
+    incident = new_incident(scenario, fault, sequence);
     root ++> incident;
+    record_evidence(incident, assets, scenario, fault);
     _trim_history(INCIDENT_HISTORY_LIMIT);
     return incident;
 }

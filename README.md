@@ -6,7 +6,7 @@ PulseGrid AI is a Jac full-stack, synthetic educational distribution-grid simula
 
 ## Current phase
 
-- Jac 0.37.x web-app; Jac owns the graph model, server operations and browser UI.
+- Jac 0.34.23 web-app (the stable 0.34 line); Jac owns the graph model, server operations and browser UI.
 - A deterministic 14-asset, 14-link example network is initialized on first graph read.
 - The dashboard reads graph state through Jac server functions and can apply a reproducible demo fault or reset the network.
 - The three scenarios fault one explicit asset each: Transformer Overheating → `TR-01`, Substation Failure → `SUB-01`, Distribution Line Overload → `J-01` (modelled as a fault at the West Junction distribution node).
@@ -20,10 +20,10 @@ All data is synthetic. There are no real infrastructure connections or automatic
 
 ## Requirements
 
-Install the Jac CLI 0.37.25 (the official native binary):
+Install the Jac CLI 0.34.23 (the official native binary):
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/jaseci-labs/jaseci/main/scripts/install.sh | bash -s -- --version 0.37.25
+curl -fsSL https://raw.githubusercontent.com/jaseci-labs/jaseci/main/scripts/install.sh | bash -s -- --version 0.34.23
 ```
 
 No API keys or paid services are needed to run the simulator. The agents need a free Hugging Face token (see [AI model configuration](#ai-model-configuration)).
@@ -32,17 +32,17 @@ No API keys or paid services are needed to run the simulator. The agents need a 
 
 ```sh
 jac install
-jac run --dev
+jac start --dev main.jac
 ```
 
-Open the app URL printed by the CLI (normally http://localhost:8000; use `--port` to change it). `jac run --show` prints what will be served without starting it. Graph persistence is local to the Jac runtime by default; `.jac/` is generated runtime data and should not be committed. To check source and run the graph tests:
+Open the app URL printed by the CLI (normally http://localhost:8000; use `--port` to change it). Graph persistence is local to the Jac runtime by default; `.jac/` is generated runtime data and should not be committed. To check source and run the graph tests:
 
 ```sh
 jac check main.jac
 jac test
 ```
 
-Tests live in `services/tests/` (`*_tests.jac`, with shared helpers in `fixtures.jac`); `jac.toml` sets `[test] directory = "."` so `jac test` collects them. They build their own transient copy of the synthetic network and never touch `root`, so they do not read or modify the dashboard's persisted graph. They cover traversal order and hop counts, shared-feeder de-duplication, alternate-feed detection, each scenario's target and resulting statuses, scenario replacement, unknown-scenario rejection, reset and incident evidence. `services/tests/endpoints_tests.jac` exercises the HTTP endpoints through `JacTestClient`, each test with its own temporary store, so it never touches the dev graph either.
+Tests live in `services/tests/` (`*_tests.jac`, with shared helpers in `fixtures.jac`), plus HTTP endpoint tests in `services/tests/test_endpoints.py`, a pytest file because Jac 0.34 runs `JacTestClient` from Python (`jac guide jac-testing`). `jac.toml` sets `[test] directory = "."` so `jac test` collects all of them. If tests are slow on a poor connection, `export LITELLM_LOCAL_MODEL_COST_MAP=True` stops LiteLLM fetching its price list at import. They build their own transient copy of the synthetic network and never touch `root`, so they do not read or modify the dashboard's persisted graph. They cover traversal order and hop counts, shared-feeder de-duplication, alternate-feed detection, each scenario's target and resulting statuses, scenario replacement, unknown-scenario rejection, reset and incident evidence. `services/tests/endpoints_tests.jac` exercises the HTTP endpoints through `JacTestClient`, each test with its own temporary store, so it never touches the dev graph either.
 
 ## Project map
 
@@ -100,17 +100,17 @@ The default model is `huggingface/openai/gpt-oss-120b` (Apache-2.0, not gated, s
 
 ```sh
 export HUGGINGFACE_API_KEY=hf_...
-jac run --dev
+jac start --dev main.jac
 ```
 
-- Jac does not load `.env` for `jac run`, so export the variable in your shell or shell profile. Never commit a real token.
+- Jac does not load `.env` for `jac start`, so export the variable in your shell or shell profile. Never commit a real token.
 - Free Hugging Face accounts get a small monthly inference credit, so heavy use may need a paid plan. Check usage at huggingface.co/settings/billing.
 - To use another model, set `LLM_MODEL`, for example `huggingface/groq/openai/gpt-oss-120b` to pin a provider, or `huggingface/Qwen/Qwen3-235B-A22B-Instruct-2507`. Other providers byLLM supports (OpenAI, Anthropic, Ollama, local models) read their own key variables.
 - Without a token, `agent_status()` reports `configured: false` and `run_investigation` returns `not_configured`; nothing is faked.
 
 ## Portability and configuration
 
-The project uses standard Jac web-app tooling and project-local source. Do not commit credentials, generated dependencies or `.jac/` runtime state. `.env.example` lists the optional AI agent configuration (see below); the current app does not read or require it. JacHammer-specific project identifiers in `jac.toml` (`[jachammer]`, `[jacpack]`) are hosting metadata and are not required for local execution. The project moved from Jac 0.34.23 to 0.37.x so it can be installed and run from a fresh clone; a JacHammer workspace still on 0.34.23 may not run it (0.37 changed `jac.toml` keys and removed `sv import`).
+The project uses standard Jac web-app tooling and project-local source. Do not commit credentials, generated dependencies or `.jac/` runtime state. `.env.example` lists the optional AI agent configuration (see below); the current app does not read or require it. JacHammer-specific project identifiers in `jac.toml` (`[jachammer]`, `[jacpack]`) are hosting metadata and are not required for local execution. **Jac version:** the project is pinned to **0.34.23**. The hackathon organisers recommend the stable 0.34 line over the newer 0.37 line, and 0.34.23 is also what JacHammer runs. Do not use 0.37 syntax here: 0.37 changed `jac.toml` keys, replaced `sv import` with inferred placement and moved `JacTestClient`. The 0.34.23 release ships native binaries for macOS (Apple silicon) and Linux (arm64) only.
 
 ## Hackathon implementation boundary
 
