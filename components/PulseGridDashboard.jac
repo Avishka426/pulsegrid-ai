@@ -1,4 +1,4 @@
-sv import from ..services.graphService { Infrastructure, LinkView, DownstreamAsset, GraphSnapshot, read_graph, apply_fault, reset_graph }
+import from ..services.graphService { Infrastructure, LinkView, DownstreamAsset, GraphSnapshot, read_graph, apply_fault, reset_graph }
 
 
 def:pub PulseGridDashboard() -> JsxElement {
