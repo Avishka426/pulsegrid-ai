@@ -1,5 +1,3 @@
-import from .frontend { app as ClientApp }
-
 import from services.graphService { read_graph, apply_fault, reset_graph }
 import from .components.PulseGridDashboard { PulseGridDashboard }
 import ".styles.global.css";
