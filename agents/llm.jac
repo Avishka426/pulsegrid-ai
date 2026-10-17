@@ -13,7 +13,8 @@ import from agents.contracts {
     ImpactNarrative, PlanChoice, Recommendation, AgentStatus
 }
 
-glob DEFAULT_MODEL: str = "gpt-4o-mini";
+# Keep in sync with [byllm.model] default_model in jac.toml (a test checks this).
+glob DEFAULT_MODEL: str = "huggingface/openai/gpt-oss-120b";
 glob KEYLESS_OPT_IN: str = "PULSEGRID_ALLOW_KEYLESS_MODEL";
 glob NUMBER_TOLERANCE: float = 0.05;
 
@@ -29,15 +30,24 @@ def model_name() -> str {
 
 # Environment variable holding the key for a model, or "" for keyless/unknown models.
 def provider_key_name(name: str) -> str {
+    if name.startswith("huggingface/") { return "HUGGINGFACE_API_KEY"; }
     if name.startswith("gpt-") or name.startswith("o1") or name.startswith("o3") or name.startswith("o4") or name.startswith("openai/") { return "OPENAI_API_KEY"; }
     if name.startswith("claude-") or name.startswith("anthropic/") { return "ANTHROPIC_API_KEY"; }
     if name.startswith("gemini/") { return "GOOGLE_API_KEY"; }
     return "";
 }
 
+# Other variables the provider library also reads for the same key.
+glob KEY_ALIASES: dict[str, list[str]] = {"HUGGINGFACE_API_KEY": ["HF_TOKEN"]};
+
 def configured_from_env(name: str, env: dict[str, str]) -> bool {
     key_name = provider_key_name(name);
-    if key_name != "" { return env.get(key_name, "").strip() != ""; }
+    if key_name != "" {
+        for candidate in [key_name] + KEY_ALIASES.get(key_name, []) {
+            if env.get(candidate, "").strip() != "" { return True; }
+        }
+        return False;
+    }
     keyless = name.startswith("ollama/") or name.startswith("local:");
     return keyless and env.get(KEYLESS_OPT_IN, "") == "1";
 }

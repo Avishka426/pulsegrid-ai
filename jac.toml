@@ -7,8 +7,11 @@ kind = "web-app"
 
 [byllm]
 [byllm.model]
-default_model = "${LLM_MODEL:-gpt-4o-mini}"
-api_key = "${OPENAI_API_KEY:-}"
+# Open-weight model (Apache-2.0) served through Hugging Face Inference
+# Providers. Needs a free Hugging Face token in HUGGINGFACE_API_KEY (or
+# HF_TOKEN). Override with LLM_MODEL, e.g. huggingface/groq/openai/gpt-oss-120b
+# to pin a provider. No api_key here: each provider reads its own env var.
+default_model = "${LLM_MODEL:-huggingface/openai/gpt-oss-120b}"
 
 
 [jac-shadcn]

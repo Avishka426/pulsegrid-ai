@@ -176,9 +176,10 @@ Contract objects. The fields the agents rely on are listed; Member 1 can add mor
 
 ## 6. Model configuration
 
-- `jac.toml` already has `[byllm.model] default_model = "${LLM_MODEL:-gpt-4o-mini}"`, `api_key = "${OPENAI_API_KEY:-}"`. `.env.example` keeps blank values.
+- `jac.toml` has `[byllm.model] default_model = "${LLM_MODEL:-huggingface/openai/gpt-oss-120b}"` and no `api_key`, so each provider reads its own variable. `agents/llm.jac` `DEFAULT_MODEL` must match (a test checks it). `.env.example` keeps blank values.
 - `agents/llm.jac` holds `glob agent_llm: Model | MockLLM` built from `LLM_MODEL`, plus `def use_model(m: Model | MockLLM)` for tests.
 - "Configured" means the provider key for the model's prefix is non-empty in the environment:
+  - `huggingface/*` → `HUGGINGFACE_API_KEY` (or `HF_TOKEN`, which LiteLLM also reads); this is the default
   - `gpt-*` → `OPENAI_API_KEY`
   - `claude-*` → `ANTHROPIC_API_KEY`
   - `gemini/*` → `GOOGLE_API_KEY`

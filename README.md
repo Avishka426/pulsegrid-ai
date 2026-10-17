@@ -14,13 +14,19 @@ PulseGrid AI is a Jac full-stack, synthetic educational distribution-grid simula
 - Each simulated fault records an `Incident` node (`INC-0001`, `INC-0002`, … from a per-graph counter, not the clock) linked by `HasEvidence` edges to `Evidence` nodes: one for the faulted asset and one per downstream asset, in breadth-first order, with stable IDs such as `INC-0001/EV-03`. A new fault marks the previous incident `superseded`, reset marks it `resolved`, and the newest 20 incidents are kept. `GraphSnapshot` carries the active `incident_id` and its `evidence`; `list_incidents` returns the history, newest first.
 - Typed recovery-planning contracts (`RecoveryAction`, `ConstraintCheck`, `RecoveryOption`, `RecoveryPlan`) are defined in `services/models.jac` for upcoming work. Nothing produces them yet, and no recovery plan is generated or shown.
 - The dashboard draws the network from graph data, colouring each asset and link as normal, fault, de-energized or alternate feed, and lists downstream assets with hops, status, load and interrupted end-use load.
-- Agent activity is explicitly inactive. No AI investigation, agent runs, switching recommendations, or real-world topology are claimed.
+- Five investigation agents run through backend endpoints when a model token is configured (see [Agents](#agents)). The dashboard's agent panel is not wired to them yet and still shows them as inactive. No real-world switching or real topology is claimed.
 
 All data is synthetic. There are no real infrastructure connections or automatic switching actions, and the network does not represent actual Sri Lankan grid topology. Use only for educational demonstration.
 
 ## Requirements
 
-Install the Jac CLI, version 0.37.x (verified with 0.37.25). No API keys or paid services are needed for Phase 1.
+Install the Jac CLI 0.37.25 (the official native binary):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/jaseci-labs/jaseci/main/scripts/install.sh | bash -s -- --version 0.37.25
+```
+
+No API keys or paid services are needed to run the simulator. The agents need a free Hugging Face token (see [AI model configuration](#ai-model-configuration)).
 
 ## Run locally
 
@@ -65,7 +71,7 @@ Tests live in `services/tests/` (`*_tests.jac`, with shared helpers in `fixtures
 
 Model output is rejected if it cites evidence IDs that don't exist or states numbers no tool produced.
 
-**Configuration.** Set `LLM_MODEL` (default `gpt-4o-mini`) and the matching key (`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`) in your environment; see `.env.example`. Run `jac install` so byLLM's dependencies are in `.jac/venv`. Without a key, `agent_status()` reports `configured: false` and `run_investigation` returns `not_configured` with no steps. Nothing is faked, stored, or applied to the graph.
+**Configuration.** By default the agents use `huggingface/openai/gpt-oss-120b` with a free Hugging Face token; see [AI model configuration](#ai-model-configuration) and `.env.example`. Run `jac install` so byLLM's dependencies are in `.jac/venv`. Without a key, `agent_status()` reports `configured: false` and `run_investigation` returns `not_configured` with no steps. Nothing is faked, stored, or applied to the graph.
 
 **Endpoints:** `agent_status`, `run_investigation(scenario_id)`, `list_agent_runs`, `get_agent_run(run_id)`. Completed and failed runs are stored on the graph as `AgentRunRecord` nodes with their steps, linked by `incident_id` to the incident they opened.
 
@@ -86,9 +92,25 @@ Model output is rejected if it cites evidence IDs that don't exist or states num
 - Endpoint tests run through `JacTestClient` with a temporary store per test. The one-time upgrade of graphs stored before the `services/` split (see `services/seed.jac`) was verified manually, not by an automated test.
 - Scenarios are static definitions (`obj`), not graph entities; only incidents and evidence are stored on the graph.
 
+## AI model configuration
+
+The agents use byLLM with an open-weight model served through Hugging Face Inference Providers.
+
+The default model is `huggingface/openai/gpt-oss-120b` (Apache-2.0, not gated, served by several providers). Create a free Hugging Face access token at huggingface.co/settings/tokens (fine-grained, with "Make calls to Inference Providers"), then export it before starting the app:
+
+```sh
+export HUGGINGFACE_API_KEY=hf_...
+jac run --dev
+```
+
+- Jac does not load `.env` for `jac run`, so export the variable in your shell or shell profile. Never commit a real token.
+- Free Hugging Face accounts get a small monthly inference credit, so heavy use may need a paid plan. Check usage at huggingface.co/settings/billing.
+- To use another model, set `LLM_MODEL`, for example `huggingface/groq/openai/gpt-oss-120b` to pin a provider, or `huggingface/Qwen/Qwen3-235B-A22B-Instruct-2507`. Other providers byLLM supports (OpenAI, Anthropic, Ollama, local models) read their own key variables.
+- Without a token, `agent_status()` reports `configured: false` and `run_investigation` returns `not_configured`; nothing is faked.
+
 ## Portability and configuration
 
-The project uses standard Jac web-app tooling and project-local source. Do not commit credentials, generated dependencies or `.jac/` runtime state. `.env.example` lists optional future LLM configuration; Phase 1 does not read or require those values. JacHammer-specific project identifiers in `jac.toml` (`[jachammer]`, `[jacpack]`) are hosting metadata and are not required for local execution. The project moved from Jac 0.34.23 to 0.37.x so it can be installed and run from a fresh clone; a JacHammer workspace still on 0.34.23 may not run it (0.37 changed `jac.toml` keys and removed `sv import`).
+The project uses standard Jac web-app tooling and project-local source. Do not commit credentials, generated dependencies or `.jac/` runtime state. `.env.example` lists the optional AI agent configuration (see below); the current app does not read or require it. JacHammer-specific project identifiers in `jac.toml` (`[jachammer]`, `[jacpack]`) are hosting metadata and are not required for local execution. The project moved from Jac 0.34.23 to 0.37.x so it can be installed and run from a fresh clone; a JacHammer workspace still on 0.34.23 may not run it (0.37 changed `jac.toml` keys and removed `sv import`).
 
 ## Hackathon implementation boundary
 

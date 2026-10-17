@@ -1,9 +1,11 @@
 # Model configuration and output validators. No model is called here.
 
 import os;
+import tomllib;
+import from pathlib { Path }
 import from agents.contracts { AgentEvidence }
 import from agents.llm {
-    provider_key_name, configured_from_env, current_status, use_env_model, disable_model,
+    DEFAULT_MODEL, provider_key_name, configured_from_env, current_status, use_env_model, disable_model,
     numbers_in, validate_text, inline_citations
 }
 
@@ -20,6 +22,22 @@ test "configured only when the matching key is non-empty" {
     assert not configured_from_env("gpt-4o-mini", {"ANTHROPIC_API_KEY": "x"});
     assert configured_from_env("gpt-4o-mini", {"OPENAI_API_KEY": "x"});
     assert configured_from_env("claude-sonnet-4-6", {"ANTHROPIC_API_KEY": "x"});
+}
+
+test "Hugging Face models use the Hugging Face token" {
+    assert provider_key_name("huggingface/openai/gpt-oss-120b") == "HUGGINGFACE_API_KEY";
+    assert provider_key_name("huggingface/groq/openai/gpt-oss-120b") == "HUGGINGFACE_API_KEY";
+    assert not configured_from_env("huggingface/openai/gpt-oss-120b", {});
+    assert not configured_from_env("huggingface/openai/gpt-oss-120b", {"HUGGINGFACE_API_KEY": "  "});
+    assert not configured_from_env("huggingface/openai/gpt-oss-120b", {"OPENAI_API_KEY": "x"});
+    assert configured_from_env("huggingface/openai/gpt-oss-120b", {"HUGGINGFACE_API_KEY": "x"});
+    assert configured_from_env("huggingface/openai/gpt-oss-120b", {"HF_TOKEN": "x"});
+}
+
+test "agent default model matches the jac.toml default" {
+    toml_path = Path(__file__).resolve().parents[2] / "jac.toml";
+    configured = tomllib.loads(toml_path.read_text())["byllm"]["model"]["default_model"];
+    assert configured == "${LLM_MODEL:-" + DEFAULT_MODEL + "}";
 }
 
 test "keyless local models need an explicit opt-in" {
