@@ -1,9 +1,9 @@
-import from "..ui.sidebar" {
+import from ".ui.sidebar" {
     SidebarProvider, Sidebar as SidebarRoot, SidebarHeader, SidebarContent,
     SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton,
     SidebarFooter, SidebarInset, SidebarTrigger
 }
-import from "..ui.separator" { Separator }
+import from ".ui.separator" { Separator }
 import from "@jac/runtime" { Link, useLocation }
 
 obj NavItem {
@@ -24,7 +24,16 @@ def:pub Sidebar(children: any = None) -> JsxElement {
     location: any = useLocation();
     current_path = location.pathname;
 
-    return <SidebarProvider className="dark">
+    # Dark is the only theme. It goes on <html> so <body> and every page
+    # inherit the dark tokens; a class on an inner element leaves text that
+    # inherits <body>'s light-theme colour dark-on-dark.
+    can with entry {
+        document.documentElement.classList.add("dark");
+    }
+
+    # No className on the ui primitives: they spread every prop after their
+    # own merged className, so a passed className replaces their layout classes.
+    return <SidebarProvider>
         <SidebarRoot collapsible="offcanvas">
             <SidebarHeader>
                 <div className="flex items-center gap-3 px-2 py-1">
@@ -53,7 +62,7 @@ def:pub Sidebar(children: any = None) -> JsxElement {
         <SidebarInset>
             <header className="flex h-14 items-center gap-2 border-b border-border pl-4 pr-4">
                 <SidebarTrigger />
-                <Separator orientation="vertical" className="mr-2 h-4" />
+                <div className="mr-2 flex h-4 items-stretch"><Separator orientation="vertical" /></div>
                 <span className="text-xs font-medium tracking-[0.15em] text-primary">PULSEGRID OPERATIONS</span>
             </header>
             <main className="flex flex-1 flex-col gap-5 pt-5 pb-5 pl-4 pr-4 sm:pl-7 sm:pr-7 xl:pl-9 xl:pr-9">
