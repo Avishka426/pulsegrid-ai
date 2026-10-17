@@ -16,7 +16,8 @@
 - Done: dashboard shows affected assets and link outages from graph data with criticality context.
 - Done: incidents and evidence as typed graph entities (`Incident`, `Evidence`, `HasEvidence`) with lifecycle and history; endpoint-level tests.
 - Done: typed recovery-planning contracts (`RecoveryAction`, `ConstraintCheck`, `RecoveryOption`, `RecoveryPlan`), not yet produced.
-- Remaining: capacity checks on alternate feeds; tool-friendly query functions for agents.
+- Done: tool-friendly query endpoints (`list_scenarios`, `preview_scenario`, `get_incident`) and dashboard pages for every sidebar item.
+- Remaining: capacity checks on alternate feeds; a deterministic recovery planner in `services/` (the Recovery panel still shows "upcoming").
 
 ## Phase 3 — Constrained recovery planning
 

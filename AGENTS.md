@@ -10,6 +10,7 @@
 - Use `jac install --shadcn` to add primitives; never hand-edit managed files under `components/ui/`.
 - Do not pass `className` to `components/ui` primitives: they spread every prop after their own merged `className`, so a passed class replaces their layout classes. Wrap the primitive in your own element instead. Components in `components/` import primitives as `".ui.<name>"` (one dot).
 - The dark theme is applied as the `dark` class on `<html>` (see `components/Sidebar.cl.jac`). A `dark` class on an inner element leaves text that inherits `<body>`'s light-theme colour unreadable.
+- Jac 0.34 client code: a module-level `glob` is not exported to other client modules (the import type-checks but the page fails to load). Share values through `def:pub` functions, as in `components/status_style.cl.jac`.
 - Jac 0.34 client code: do not nest `await` inside another expression (`len(await f())` compiles to `await f().length`). Assign the awaited value first.
 - Keep all network data synthetic and deterministic. Do not claim agent activity or introduce physical-control actions before implementation and review.
 - Never commit credentials, `.env`, runtime graph state, dependency folders, or generated build output. `.env.example` may contain blank placeholders only.
