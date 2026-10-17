@@ -14,7 +14,7 @@ PulseGrid AI is a Jac full-stack, synthetic educational distribution-grid simula
 - Each simulated fault records an `Incident` node (`INC-0001`, `INC-0002`, … from a per-graph counter, not the clock) linked by `HasEvidence` edges to `Evidence` nodes: one for the faulted asset and one per downstream asset, in breadth-first order, with stable IDs such as `INC-0001/EV-03`. A new fault marks the previous incident `superseded`, reset marks it `resolved`, and the newest 20 incidents are kept. `GraphSnapshot` carries the active `incident_id` and its `evidence`; `list_incidents` returns the history, newest first.
 - Typed recovery-planning contracts (`RecoveryAction`, `ConstraintCheck`, `RecoveryOption`, `RecoveryPlan`) are defined in `services/models.jac` for upcoming work. Nothing produces them yet, and no recovery plan is generated or shown.
 - The dashboard draws the network from graph data, colouring each asset and link as normal, fault, de-energized or alternate feed, and lists downstream assets with hops, status, load and interrupted end-use load.
-- Agent activity is explicitly inactive. No AI investigation, agent runs, switching recommendations, or real-world topology are claimed.
+- Five investigation agents run through backend endpoints when a model token is configured (see [Agents](#agents)). The dashboard's agent panel is not wired to them yet and still shows them as inactive. No real-world switching or real topology is claimed.
 
 All data is synthetic. There are no real infrastructure connections or automatic switching actions, and the network does not represent actual Sri Lankan grid topology. Use only for educational demonstration.
 
@@ -26,7 +26,7 @@ Install the Jac CLI 0.37.25 (the official native binary):
 curl -fsSL https://raw.githubusercontent.com/jaseci-labs/jaseci/main/scripts/install.sh | bash -s -- --version 0.37.25
 ```
 
-No API keys or paid services are needed for the current features.
+No API keys or paid services are needed to run the simulator. The agents need a free Hugging Face token (see [AI model configuration](#ai-model-configuration)).
 
 ## Run locally
 
@@ -59,7 +59,31 @@ Tests live in `services/tests/` (`*_tests.jac`, with shared helpers in `fixtures
 - `styles/global.css` — Tailwind v4 and themed shadcn design tokens.
 - `PROJECT_PLAN.md` — delivered phase and next phase boundaries.
 
+## Agents
+
+`agents/` adds five agents that investigate a simulated fault. Graph tools compute every number; the model only writes prose and chooses among options that code generated.
+
+1. **Monitoring Agent** (`MonitoringScan` walker): finds the faulted asset, de-energized assets and assets at or above 80% load.
+2. **Impact Investigator** (`DownstreamWalk` walker): cites the incident's `Evidence` records, cross-checks them against the trace tool and its own walk, and has the model narrate the impact.
+3. **Recovery Planner**: gets deterministic options from `plan_recovery` and has the model choose one.
+4. **Verification Agent**: re-runs `check_option` independently and records the checks on the option. A failure goes back to the planner.
+5. **Coordinator Agent**: applies the scenario, opens the `Incident`, sequences the agents, caps re-planning at 3 iterations, and has the model write the final recommendation.
+
+Model output is rejected if it cites evidence IDs that don't exist or states numbers no tool produced.
+
+**Configuration.** By default the agents use `huggingface/openai/gpt-oss-120b` with a free Hugging Face token; see [AI model configuration](#ai-model-configuration) and `.env.example`. Run `jac install` so byLLM's dependencies are in `.jac/venv`. Without a key, `agent_status()` reports `configured: false` and `run_investigation` returns `not_configured` with no steps. Nothing is faked, stored, or applied to the graph.
+
+**Endpoints:** `agent_status`, `run_investigation(scenario_id)`, `list_agent_runs`, `get_agent_run(run_id)`. Completed and failed runs are stored on the graph as `AgentRunRecord` nodes with their steps, linked by `incident_id` to the incident they opened.
+
+**Tests:** `agents/tests/*_tests.jac` (run with `jac test`) use MockLLM, so no key is needed.
+
+`plan_recovery` and `check_option` in `agents/tools.jac` are provisional implementations of the `services/models.jac` recovery contract until the services planner lands. Design and status: `agents/DESIGN.md`.
+
 ## Known limitations
+
+- macOS 26: if `jac install` fails with `ensurepip is not available` (the bundled Python's `pyexpat` cannot find `_XML_SetAllocTrackerActivationThreshold` in the system libexpat), run `brew install expat`, then `DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib jac install` once.
+
+- Agents: with a real model, the choice and wording vary between runs (the numbers do not). The number check is lexical: it catches invented figures, not flawed reasoning about real ones. Runs are synchronous (several model calls). Runs from anonymous users share one guest graph.
 
 - Impact is topology-only reachability over directed links. There is no load-flow, voltage, protection or capacity modelling; "alternate feed" means a source path exists in the graph, not that it can carry the load.
 - Only one fault is active at a time; applying a scenario first resets the network.
@@ -68,9 +92,9 @@ Tests live in `services/tests/` (`*_tests.jac`, with shared helpers in `fixtures
 - Endpoint tests run through `JacTestClient` with a temporary store per test. The one-time upgrade of graphs stored before the `services/` split (see `services/seed.jac`) was verified manually, not by an automated test.
 - Scenarios are static definitions (`obj`), not graph entities; only incidents and evidence are stored on the graph.
 
-## AI model configuration (for upcoming agents)
+## AI model configuration
 
-The agents are not built yet, so nothing calls a model today. When they arrive they will use byLLM with an open-weight model served through Hugging Face Inference Providers:
+The agents use byLLM with an open-weight model served through Hugging Face Inference Providers.
 
 The default model is `huggingface/openai/gpt-oss-120b` (Apache-2.0, not gated, served by several providers). Create a free Hugging Face access token at huggingface.co/settings/tokens (fine-grained, with "Make calls to Inference Providers"), then export it before starting the app:
 
@@ -82,7 +106,7 @@ jac run --dev
 - Jac does not load `.env` for `jac run`, so export the variable in your shell or shell profile. Never commit a real token.
 - Free Hugging Face accounts get a small monthly inference credit, so heavy use may need a paid plan. Check usage at huggingface.co/settings/billing.
 - To use another model, set `LLM_MODEL`, for example `huggingface/groq/openai/gpt-oss-120b` to pin a provider, or `huggingface/Qwen/Qwen3-235B-A22B-Instruct-2507`. Other providers byLLM supports (OpenAI, Anthropic, Ollama, local models) read their own key variables.
-- Without a token, agent features must report that they are not configured rather than produce any output.
+- Without a token, `agent_status()` reports `configured: false` and `run_investigation` returns `not_configured`; nothing is faked.
 
 ## Portability and configuration
 
