@@ -13,7 +13,10 @@ PulseGrid AI is a Jac full-stack, synthetic educational distribution-grid simula
 - Fault simulation computes downstream impact with a `DownstreamTrace` walker: a deterministic breadth-first traversal of outgoing `PowerLink` edges from the faulted node, recording each reachable asset once with its hop count. The same walker, run from the power source with the faulted node blocked, identifies downstream assets that still have an alternate supply path in the graph (for example Water Works, which is also fed from Harbor Junction).
 - Each simulated fault records an `Incident` node (`INC-0001`, `INC-0002`, … from a per-graph counter, not the clock) linked by `HasEvidence` edges to `Evidence` nodes: one for the faulted asset and one per downstream asset, in breadth-first order, with stable IDs such as `INC-0001/EV-03`. A new fault marks the previous incident `superseded`, reset marks it `resolved`, and the newest 20 incidents are kept. `GraphSnapshot` carries the active `incident_id` and its `evidence`; `list_incidents` returns the history, newest first.
 - Typed recovery-planning contracts (`RecoveryAction`, `ConstraintCheck`, `RecoveryOption`, `RecoveryPlan`) are defined in `services/models.jac` for upcoming work. Nothing produces them yet, and no recovery plan is generated or shown.
-- The dashboard draws the network from graph data, colouring each asset and link as normal, fault, de-energized or alternate feed, and lists downstream assets with hops, status, load and interrupted end-use load.
+- The dashboard draws the network from graph data, colouring each asset and link as normal, fault, de-energized or alternate feed, shaping each node by category (diamond/square/triangle/hexagon/pentagon/octagon/heptagon/circle), and lists downstream assets with hops, status, load and interrupted end-use load.
+- Clicking or keyboard-selecting (Enter/Space) a node in the diagram, the asset register or the downstream-impact table shows its details — category, capacity, load, criticality, status, connected links and downstream hops when faulted — in the Asset Details panel.
+- The dashboard is split into reusable Jac components (`Sidebar`, `Header`, `MetricCards`, `NetworkDiagram`, `AssetDetails`, `DownstreamImpactPanel`, `IncidentTimeline`, `SimulationControls`, `AgentActivityPanel`, `RecoveryPanel`) composed by page-level shells under `components/pages/`, with sidebar navigation to real routes; routes without built content (`Network Explorer`, `Incident Center`, `Agent Intelligence`, `Simulation Lab`, `Reports`) show an explicit "not built yet" state rather than placeholder or fabricated data.
+- Renders in dark mode by default (the theme toggle described in an earlier draft was never built, so this is the only mode today).
 - Five investigation agents run through backend endpoints when a model token is configured (see [Agents](#agents)). The dashboard's agent panel is not wired to them yet and still shows them as inactive. No real-world switching or real topology is claimed.
 
 All data is synthetic. There are no real infrastructure connections or automatic switching actions, and the network does not represent actual Sri Lankan grid topology. Use only for educational demonstration.
@@ -55,7 +58,11 @@ Tests live in `services/tests/` (`*_tests.jac`, with shared helpers in `fixtures
 - `services/views.jac` — link views and the `GraphSnapshot` returned to clients.
 - `services/graphService.jac` — server endpoints (`read_graph`, `apply_fault`, `reset_graph`, `list_incidents`); re-exports the types clients import.
 - `services/tests/` — traversal, scenario, view, reset, incident and endpoint tests.
-- `components/PulseGridDashboard.jac` — Jac client dashboard and simulation controls.
+- `components/pages/OverviewPage.cl.jac` — the stateful dashboard page; owns graph state, scenario selection and node selection, and composes the section components below.
+- `components/pages/UpcomingPage.cl.jac` — shared "not built yet" page for sidebar routes with no content in this phase.
+- `components/Sidebar.cl.jac`, `components/Header.cl.jac` — shared navigation shell and page header, used by every page.
+- `components/MetricCards.cl.jac`, `components/NetworkDiagram.cl.jac`, `components/AssetDetails.cl.jac`, `components/DownstreamImpactPanel.cl.jac`, `components/IncidentTimeline.cl.jac`, `components/SimulationControls.cl.jac`, `components/AgentActivityPanel.cl.jac`, `components/RecoveryPanel.cl.jac` — dashboard sections.
+- `components/ui/`, `lib/utils.jac` — shadcn primitives and the `cn()` helper, managed by `jac install --shadcn`; never hand-edited.
 - `styles/global.css` — Tailwind v4 and themed shadcn design tokens.
 - `PROJECT_PLAN.md` — delivered phase and next phase boundaries.
 
@@ -87,8 +94,9 @@ Model output is rejected if it cites evidence IDs that don't exist or states num
 
 - Impact is topology-only reachability over directed links. There is no load-flow, voltage, protection or capacity modelling; "alternate feed" means a source path exists in the graph, not that it can carry the load.
 - Only one fault is active at a time; applying a scenario first resets the network.
-- Interrupted load sums de-energized end-use assets (assets with no outgoing links) to avoid double counting. The "modeled load" headline figure still sums every asset's `load_mw`, including pass-through equipment, so it overstates total demand.
-- The diagram layout coordinates for the 14 synthetic asset IDs are fixed in the dashboard component; new assets would need a layout entry.
+- The "end-use load" headline and interrupted-load figure both sum only assets with no outgoing links, so pass-through equipment (substations, transformers, junctions) is not double counted.
+- The diagram layout coordinates for the 14 synthetic asset IDs are fixed in `components/NetworkDiagram.cl.jac`; new assets would need a layout entry.
+- Category shapes are a fixed lookup over the network's 8 known categories; a new category would need a `CATEGORY_SHAPE` entry in `components/NetworkDiagram.cl.jac`.
 - Endpoint tests run through `JacTestClient` with a temporary store per test. The one-time upgrade of graphs stored before the `services/` split (see `services/seed.jac`) was verified manually, not by an automated test.
 - Scenarios are static definitions (`obj`), not graph entities; only incidents and evidence are stored on the graph.
 
@@ -107,6 +115,20 @@ jac start --dev main.jac
 - Free Hugging Face accounts get a small monthly inference credit, so heavy use may need a paid plan. Check usage at huggingface.co/settings/billing.
 - To use another model, set `LLM_MODEL`, for example `huggingface/groq/openai/gpt-oss-120b` to pin a provider, or `huggingface/Qwen/Qwen3-235B-A22B-Instruct-2507`. Other providers byLLM supports (OpenAI, Anthropic, Ollama, local models) read their own key variables.
 - Without a token, `agent_status()` reports `configured: false` and `run_investigation` returns `not_configured`; nothing is faked.
+
+## Demo script (about 3 minutes)
+
+1. **Baseline** — open the app; point out the Overview metrics (14 nodes, 0 incidents, Nominal health) and the synthetic-data badge.
+2. **Fault** — in Simulation Controls, pick "Transformer Overheating" and click Simulate fault; the diagram recolors `TR-01` and its downstream links, and the incident timeline updates.
+3. **Downstream impact** — scroll to Downstream Impact: show the hop-counted table, the de-energized vs. alternate-feed split (Water Works stays fed from Harbor Junction), and the interrupted end-use load.
+4. **Node selection** — click `TR-01` in the diagram (or press Tab to it and hit Enter); Asset Details shows its category, capacity, load, criticality and connected links. Click a downstream row to inspect that asset instead.
+5. **Recovery plan** — point out the Recovery panel's honest "not implemented yet" state — no fabricated recovery options.
+6. **Agent activity** — point out the Agent Activity panel's "Not configured · no runs" state, and the sidebar's other routes showing an explicit "not built yet" state rather than placeholder data.
+7. **Reset** — click Reset simulation to return to baseline.
+
+## Jac language share
+
+Handwritten executable source (`.jac` files, excluding the registry-managed `components/ui/` and `lib/utils.cl.jac`, `.jac/` runtime state, and `node_modules/`) is **100% Jac** — there is no handwritten JavaScript or TypeScript application logic. As of this phase: ~1,000 lines across `main.jac`, `services/` and `components/`, plus `styles/global.css` for Tailwind/shadcn design tokens.
 
 ## Portability and configuration
 
